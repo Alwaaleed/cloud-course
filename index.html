@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Majal 2026 · Cloud Computing</title>
+  <style>
+    /* Majal light identity — palette sampled from the deck template PDF.
+       Standalone (the landing page does not load Reveal), so the tokens are
+       repeated here rather than imported. Keep them in sync with
+       shared/css/course.css. */
+    :root{
+      --petrol:#00567d; --petrol-d:#003f5e; --teal:#1f8f89; --turq:#33d2cb;
+      --yellow:#f2d200; --ink:#12333d; --slate:#2f4f59; --muted:#5c7880;
+      --bg:#f6f8f8; --bg-2:#eef3f3; --card:#ffffff; --line:#e0e7e8;
+      --sans:"Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{
+      font-family:var(--sans); color:var(--ink); background:var(--bg);
+      min-height:100vh; display:flex; flex-direction:column;
+      -webkit-font-smoothing:antialiased;
+    }
+    /* Majal square-block motif, quietly anchored bottom-right like the deck cover */
+    body::after{content:""; position:fixed; right:0; bottom:0; width:168px; height:168px;
+      z-index:0; pointer-events:none; opacity:.5;
+      background:
+        linear-gradient(var(--turq),var(--turq)) 0 0/70px 70px no-repeat,
+        linear-gradient(var(--yellow),var(--yellow)) 78px 0/50px 70px no-repeat,
+        linear-gradient(var(--petrol),var(--petrol)) 0 78px/70px 50px no-repeat;}
+    .wrap{position:relative; z-index:1; width:100%; max-width:1080px; margin:0 auto; padding:40px 28px 56px; flex:1 0 auto}
+
+    header{display:flex; align-items:center; gap:14px; margin-bottom:64px}
+    header .logo{height:52px; width:auto; flex:0 0 auto; mix-blend-mode:multiply}
+
+    .kicker{font-weight:800; letter-spacing:.24em; text-transform:uppercase;
+      font-size:14px; color:var(--teal); margin:0 0 14px}
+    h1{font-size:clamp(40px,7vw,76px); line-height:1.02; letter-spacing:-.02em;
+      color:var(--petrol); margin:0; font-weight:800}
+    .bar{width:72px; height:6px; border-radius:3px; background:var(--yellow); margin:22px 0 20px}
+    .lede{font-size:clamp(17px,2.2vw,21px); color:var(--slate); max-width:44ch; margin:0 0 52px; line-height:1.5}
+
+    .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px}
+    .day{
+      position:relative; display:flex; flex-direction:column; gap:10px;
+      background:var(--card); border:1px solid var(--line); border-top:4px solid var(--edge,var(--turq));
+      border-radius:2px; padding:22px 22px 24px; text-decoration:none; color:inherit;
+      box-shadow:0 1px 2px rgba(18,51,61,.04); transition:transform .12s, box-shadow .12s, border-color .12s;
+    }
+    a.day:hover{transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,86,125,.12); border-color:var(--line)}
+    .day .no{font-family:var(--sans); font-weight:800; font-size:34px; color:var(--petrol); line-height:1}
+    .day h2{margin:0; font-size:20px; color:var(--petrol); font-weight:800; letter-spacing:-.01em}
+    .day p{margin:0; font-size:14.5px; line-height:1.5; color:var(--muted)}
+    .status{margin-top:auto; align-self:flex-start; font-size:11px; font-weight:700; letter-spacing:.12em;
+      text-transform:uppercase; padding:.35em .8em; border-radius:2px}
+    .status.live{background:rgba(31,143,137,.14); color:var(--teal); border:1px solid rgba(31,143,137,.4)}
+    .status.soon{background:var(--bg-2); color:var(--muted); border:1px solid var(--line)}
+    .day.soon{opacity:.72; cursor:not-allowed}
+    .day.live::after{content:"→"; position:absolute; top:20px; right:22px; color:var(--petrol);
+      font-size:22px; font-weight:800; transition:transform .12s}
+    a.day.live:hover::after{transform:translateX(4px)}
+    /* per-day accent edges cycling the brand blocks */
+    .day:nth-child(1){--edge:var(--turq)} .day:nth-child(2){--edge:var(--petrol)}
+    .day:nth-child(3){--edge:var(--yellow)} .day:nth-child(4){--edge:var(--teal)}
+    .day:nth-child(5){--edge:var(--turq)}
+
+    .sect{margin:56px 0 16px; font-size:13px; font-weight:800; letter-spacing:.24em;
+      text-transform:uppercase; color:var(--teal)}
+    .labs{display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px}
+    a.lab{position:relative; display:flex; flex-direction:column; gap:8px; text-decoration:none; color:inherit;
+      background:var(--card); border:1px solid var(--line); border-left:4px solid var(--teal);
+      border-radius:2px; padding:20px 22px 22px; box-shadow:0 1px 2px rgba(18,51,61,.04);
+      transition:transform .12s, box-shadow .12s}
+    a.lab:hover{transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,86,125,.12)}
+    a.lab .tag{font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+    a.lab h2{margin:0; font-size:19px; color:var(--petrol); font-weight:800; letter-spacing:-.01em}
+    a.lab p{margin:0; font-size:14.5px; line-height:1.5; color:var(--muted)}
+    a.lab::after{content:"→"; position:absolute; top:18px; right:22px; color:var(--petrol);
+      font-size:22px; font-weight:800; transition:transform .12s}
+    a.lab:hover::after{transform:translateX(4px)}
+
+    footer{position:relative; z-index:1; flex:0 0 auto; border-top:1px solid var(--line); background:var(--bg)}
+    .foot{max-width:1080px; margin:0 auto; padding:20px 28px; display:flex; justify-content:space-between;
+      align-items:center; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--muted)}
+    .foot .slogan{font-weight:700; letter-spacing:.02em; color:var(--slate)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img class="logo" src="MajalLogo.jpg" alt="Majal — Unlocking your tech horizons">
+    </header>
+
+    <p class="kicker">Majal · 2026 Program</p>
+    <h1>Cloud Computing</h1>
+    <div class="bar"></div>
+    <p class="lede">Five days that end with your own app answering on a public address. You launch a real server
+    on day one and every day after that adds a piece to the same machine — containers, networking, managed
+    services, then the demo.</p>
+
+    <div class="grid">
+      <a class="day live" href="day1/" style="--edge:var(--turq)">
+        <div class="no">01</div>
+        <h2>Your first server</h2>
+        <p>Launch a real virtual machine, give it a public address, and drive it from a terminal over SSH.</p>
+        <span class="status live">Available</span>
+      </a>
+      <div class="day soon">
+        <div class="no">02</div>
+        <h2>Containers and deployment</h2>
+        <p>Package the app and put it on the server — first by hand, then automatically.</p>
+        <span class="status soon">Coming soon</span>
+      </div>
+      <div class="day soon">
+        <div class="no">03</div>
+        <h2>The network it lives on</h2>
+        <p>IPs, subnets and firewalls — why traffic reaches your server, or does not.</p>
+        <span class="status soon">Coming soon</span>
+      </div>
+      <div class="day soon">
+        <div class="no">04</div>
+        <h2>Managed services and scale</h2>
+        <p>Stop running things yourself, and survive more than one visitor at a time.</p>
+        <span class="status soon">Coming soon</span>
+      </div>
+      <div class="day soon">
+        <div class="no">05</div>
+        <h2>Polish and present</h2>
+        <p>Document the whole build and show it to the room.</p>
+        <span class="status soon">Coming soon</span>
+      </div>
+    </div>
+
+    <p class="sect">Labs</p>
+    <div class="labs">
+      <a class="lab" href="day1/lab1.html">
+        <span class="tag">Day 1 Lab · full day</span>
+        <h2>Launch a server, then take the wheel</h2>
+        <p>Two milestones and two tasks: create the instance and its key pair, connect over SSH, decode file
+        permissions, and write a reporting script that runs on the server itself.</p>
+        <span class="status live">Available</span>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    <div class="foot">
+      <span class="slogan">Majal · Unlocking your tech horizons</span>
+      <span>Cloud Computing 2026</span>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Permissions — build the mode, watch SSH accept or refuse it</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 356px; cursor: pointer; }
+  .hint { margin-left: auto; font-size: 12px; color: #8AA1A8; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <button data-o="400">chmod 400</button>
+    <button data-o="600">chmod 600</button>
+    <button data-o="644" class="on">chmod 644</button>
+    <button data-o="755">chmod 755</button>
+    <button data-o="777">chmod 777</button>
+    <span class="hint">click any r / w / x square to toggle it</span>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap");
+  var W = 1000, H = 356;
+
+  var GROUPS = ["OWNER", "GROUP", "OTHERS"];
+  var BITS = [{ ch: "r", v: 4 }, { ch: "w", v: 2 }, { ch: "x", v: 1 }];
+  var perms = [6, 4, 4];          // start at 644 — the mode a freshly downloaded key has
+  var cells = [];                 // hit-test rects
+
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+  var SANS = "'Avenir Next', 'Segoe UI', system-ui, sans-serif";
+  var PAD = 18;
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align, base) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = base || "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+
+  function symbolic() {
+    var s = "-";
+    for (var g = 0; g < 3; g++) {
+      s += (perms[g] & 4 ? "r" : "-") + (perms[g] & 2 ? "w" : "-") + (perms[g] & 1 ? "x" : "-");
+    }
+    return s;
+  }
+  function octal() { return "" + perms[0] + perms[1] + perms[2]; }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    cells = [];
+
+    // ---- the two readouts --------------------------------------------------
+    txt(symbolic(), PAD, 30, "700 30px " + MONO, "#00567C");
+    txt("what ls -l shows you", PAD, 56, "11px " + MONO, "#8AA1A8");
+
+    txt(octal(), W - PAD, 30, "800 30px " + MONO, "#1F8F89", "right");
+    txt("what you pass to chmod", W - PAD, 56, "11px " + MONO, "#8AA1A8", "right");
+
+    // ---- three groups of three bits ---------------------------------------
+    var colW = (W - PAD * 2) / 3;
+    var cellW = 62, cellH = 58, gap = 9;
+    var rowY = 100;
+
+    for (var g = 0; g < 3; g++) {
+      var cx = PAD + colW * g + colW / 2;
+      txt(GROUPS[g], cx, 84, "700 11px " + MONO, "#5C7880", "center");
+
+      var startX = cx - (cellW * 3 + gap * 2) / 2;
+      for (var b = 0; b < 3; b++) {
+        var on = !!(perms[g] & BITS[b].v);
+        var x = startX + b * (cellW + gap);
+        ctx.fillStyle = on ? "#1F8F89" : "#EEF3F3";
+        ctx.strokeStyle = on ? "#1F8F89" : "#D6DEDF";
+        ctx.lineWidth = 1.5;
+        roundRect(x, rowY, cellW, cellH, 4); ctx.fill(); ctx.stroke();
+
+        txt(BITS[b].ch, x + cellW / 2, rowY + 23, "800 21px " + MONO, on ? "#FFFFFF" : "#A9BABE", "center");
+        txt("" + BITS[b].v, x + cellW / 2, rowY + 43, "700 11px " + MONO,
+            on ? "rgba(255,255,255,.85)" : "#BCC9CC", "center");
+
+        cells.push({ x: x, y: rowY, w: cellW, h: cellH, g: g, v: BITS[b].v });
+      }
+
+      // the arithmetic, spelled out
+      var parts = [];
+      for (var k = 0; k < 3; k++) if (perms[g] & BITS[k].v) parts.push(BITS[k].v);
+      var sum = parts.length ? parts.join(" + ") + " = " + perms[g] : "nothing = 0";
+      txt(sum, cx, rowY + cellH + 20, "700 12px " + MONO, "#42606A", "center");
+    }
+
+    // ---- consequences ------------------------------------------------------
+    var panelY = 208, panelH = H - panelY - 8;
+    ctx.fillStyle = "#04303F";
+    roundRect(PAD, panelY, W - PAD * 2, panelH, 6); ctx.fill();
+
+    var keyOK = (perms[1] === 0 && perms[2] === 0 && (perms[0] & 1) === 0);
+    var runnable = !!(perms[0] & 1);
+
+    txt("$ ssh -i my-key.pem root@47.91.x.x", PAD + 16, panelY + 24, "13px " + MONO, "#9FC9CF");
+    if (keyOK) {
+      txt("→ key accepted · root@iZ…:~#", PAD + 16, panelY + 46, "700 13px " + MONO, "#33D3CB");
+    } else if (perms[1] !== 0 || perms[2] !== 0) {
+      txt("→ WARNING: UNPROTECTED PRIVATE KEY FILE! Permissions 0" + octal() + " are too open.",
+          PAD + 16, panelY + 46, "700 13px " + MONO, "#FF8A8A");
+      txt("  This private key will be ignored.", PAD + 16, panelY + 66, "13px " + MONO, "#FF8A8A");
+    } else {
+      txt("→ key accepted, but an executable key is a smell — 400 is the mode you want.",
+          PAD + 16, panelY + 46, "13px " + MONO, "#F2D200");
+    }
+
+    txt("$ ./report.sh", PAD + 16, panelY + 96, "13px " + MONO, "#9FC9CF");
+    txt(runnable ? "→ Server report written." : "→ bash: ./report.sh: Permission denied",
+        PAD + 16, panelY + 118, "700 13px " + MONO, runnable ? "#33D3CB" : "#FF8A8A");
+
+    // ---- caption -----------------------------------------------------------
+    if (!keyOK && (perms[1] || perms[2])) {
+      cap.innerHTML = "<span class='dngr'>SSH refuses this key.</span> Anyone else on your laptop could read it, so OpenSSH will not use it at all. This is the exact error you get if you skip <b>chmod 400</b> — and it is why Session 1 told you to run it.";
+    } else if (keyOK) {
+      cap.innerHTML = "<span class='good'>Locked down.</span> Only the owner can read it; group and others get nothing. <b>4 + 0 + 0 = 400.</b> Note the same file can no longer be <em>run</em> — which is fine for a key, and exactly wrong for a script.";
+    } else {
+      cap.innerHTML = "Owner-only, and executable. Fine for <b>report.sh</b> (that is what <b>chmod +x</b> gives you), wrong for a private key.";
+    }
+  }
+
+  canvas.addEventListener("click", function (ev) {
+    var r = canvas.getBoundingClientRect();
+    var mx = (ev.clientX - r.left) * (W / r.width);
+    var my = (ev.clientY - r.top) * (H / r.height);
+    for (var i = 0; i < cells.length; i++) {
+      var c = cells[i];
+      if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+        perms[c.g] ^= c.v;
+        syncButtons();
+        draw();
+        return;
+      }
+    }
+  });
+
+  function syncButtons() {
+    var o = octal();
+    var btns = document.querySelectorAll("button[data-o]");
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("on", btns[i].dataset.o === o);
+  }
+
+  var btns = document.querySelectorAll("button[data-o]");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener("click", function () {
+      var o = this.dataset.o;
+      perms = [+o[0], +o[1], +o[2]];
+      syncButtons(); draw();
+    });
+  }
+
+  window.addEventListener("resize", fit);
+  var m = /o=(\d{3})/.exec(location.search);
+  if (m) { perms = [+m[1][0], +m[1][1], +m[1][2]]; syncButtons(); }
+  fit();
+})();
+</script>
+</body>
+</html>

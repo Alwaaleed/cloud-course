@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Who manages what — IaaS / PaaS / SaaS</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 384px; cursor: grab; }
+  canvas.drag { cursor: grabbing; }
+  .lgd { margin-left: auto; font-size: 12px; color: #42606A; display: flex; gap: 16px; align-items: center; }
+  .sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <button data-b="8">On-premises</button>
+    <button data-b="5" class="on">IaaS</button>
+    <button data-b="2">PaaS</button>
+    <button data-b="0">SaaS</button>
+    <span class="lgd">
+      <span><i class="sw" style="background:#1F8F89"></i>you manage</span>
+      <span><i class="sw" style="background:#00567C"></i>provider manages</span>
+    </span>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap");
+  var W = 1000, H = 384;
+
+  var LAYERS = [
+    "Application",
+    "Data",
+    "Runtime",
+    "Middleware",
+    "Operating system",
+    "Virtualisation",
+    "Servers & storage",
+    "Networking"
+  ];
+
+  // b = how many layers, counting from the top, that YOU manage.
+  var MODELS = {
+    8: { name: "On-premises", note: "Not cloud at all.",
+         txt: "A server in your own building. You buy it, rack it, power it, cool it and patch it. <b>Every layer is yours.</b>" },
+    5: { name: "IaaS", note: "Infrastructure as a Service",
+         txt: "<b>Your ECS instance.</b> Alibaba runs the hardware and the hypervisor; you choose Ubuntu 22.04 and you patch it. <em>This is what you launch in Milestone 1.</em>" },
+    2: { name: "PaaS", note: "Platform as a Service",
+         txt: "<b>A managed database.</b> You connect to it and use it — nobody hands you an operating system to patch." },
+    0: { name: "SaaS", note: "Software as a Service",
+         txt: "<b>Gmail. Salesforce.</b> You log in and use finished software. You manage nothing but your own data inside it." }
+  };
+  var SNAPS = [0, 2, 5, 8];
+
+  var bTarget = 5, bAnim = 5, dragging = false, raf = null;
+
+  var PAD = 16, TOP = 52, ROWH = 0;
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = cssW;
+    ROWH = (H - PAD - TOP) / LAYERS.length;
+    draw();
+  }
+
+  function nearestSnap(v) {
+    var best = SNAPS[0];
+    for (var i = 0; i < SNAPS.length; i++) {
+      if (Math.abs(SNAPS[i] - v) < Math.abs(best - v)) best = SNAPS[i];
+    }
+    return best;
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var m = MODELS[bTarget];
+    var x = PAD, w = W - PAD * 2;
+
+    // ---- heading -----------------------------------------------------------
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "800 22px 'Avenir Next', 'Segoe UI', system-ui, sans-serif";
+    ctx.fillStyle = "#00567C";
+    ctx.fillText(m.name, x, 30);
+    ctx.font = "13px 'JetBrains Mono', Menlo, Consolas, monospace";
+    ctx.fillStyle = "#5C7880";
+    ctx.fillText(m.note, x + 210, 30);
+
+    ctx.font = "11px 'JetBrains Mono', Menlo, Consolas, monospace";
+    ctx.fillStyle = "#8AA1A8";
+    ctx.textAlign = "right";
+    ctx.fillText("DRAG THE YELLOW BAR", x + w, 30);
+    ctx.textAlign = "left";
+
+    // ---- layers ------------------------------------------------------------
+    for (var i = 0; i < LAYERS.length; i++) {
+      var y = TOP + i * ROWH;
+      var mine = i < bTarget;
+      ctx.fillStyle = mine ? "rgba(31,143,137,.13)" : "rgba(0,86,125,.10)";
+      roundRect(x, y + 2, w, ROWH - 4, 3); ctx.fill();
+
+      // the coloured spine on the left edge of each row
+      ctx.fillStyle = mine ? "#1F8F89" : "#00567C";
+      roundRect(x, y + 2, 4, ROWH - 4, 2); ctx.fill();
+
+      ctx.font = "600 14px 'Avenir Next', 'Segoe UI', system-ui, sans-serif";
+      ctx.fillStyle = "#12333D";
+      ctx.textBaseline = "middle";
+      ctx.fillText(LAYERS[i], x + 18, y + ROWH / 2);
+
+      ctx.font = "700 10px 'JetBrains Mono', Menlo, Consolas, monospace";
+      ctx.fillStyle = mine ? "#1F8F89" : "#00567C";
+      ctx.textAlign = "right";
+      ctx.fillText(mine ? "YOU" : "PROVIDER", x + w - 14, y + ROWH / 2);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
+    // ---- the boundary ------------------------------------------------------
+    var by = TOP + bAnim * ROWH;
+    ctx.strokeStyle = "#F2D200"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x, by); ctx.lineTo(x + w, by); ctx.stroke();
+
+    // grab handle
+    ctx.fillStyle = "#F2D200";
+    roundRect(x + w / 2 - 34, by - 9, 68, 18, 9); ctx.fill();
+    ctx.fillStyle = "#12333D";
+    ctx.font = "700 10px 'JetBrains Mono', Menlo, Consolas, monospace";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("DRAG", x + w / 2, by + 1);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+
+    cap.innerHTML = m.txt;
+  }
+
+  function animate() {
+    var d = bTarget - bAnim;
+    if (Math.abs(d) < 0.004) { bAnim = bTarget; draw(); raf = null; return; }
+    bAnim += d * 0.22;
+    draw();
+    raf = requestAnimationFrame(animate);
+  }
+  function retarget(b) {
+    if (b === bTarget) return;
+    bTarget = b;
+    var btns = document.querySelectorAll("button[data-b]");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle("on", +btns[i].dataset.b === b);
+    }
+    if (!raf) raf = requestAnimationFrame(animate);
+  }
+
+  function yToB(ev) {
+    var r = canvas.getBoundingClientRect();
+    var y = (ev.clientY - r.top) * (H / r.height);
+    return Math.max(0, Math.min(LAYERS.length, (y - TOP) / ROWH));
+  }
+
+  canvas.addEventListener("mousedown", function (ev) {
+    dragging = true; canvas.classList.add("drag");
+    retarget(nearestSnap(yToB(ev)));
+  });
+  window.addEventListener("mousemove", function (ev) {
+    if (dragging) retarget(nearestSnap(yToB(ev)));
+  });
+  window.addEventListener("mouseup", function () {
+    dragging = false; canvas.classList.remove("drag");
+  });
+
+  var btns = document.querySelectorAll("button[data-b]");
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener("click", function () { retarget(+this.dataset.b); });
+  }
+
+  window.addEventListener("resize", fit);
+  fit();
+})();
+</script>
+</body>
+</html>

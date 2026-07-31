@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 1 — Launch a server, then take the wheel</title>
+<style>
+:root{
+  --petrol:#00567d; --petrol-d:#003f5e; --teal:#1f8f89; --turq:#33d2cb;
+  --yellow:#f2d200; --ink:#12333d; --slate:#2f4f59; --muted:#5c7880;
+  --bg:#f6f8f8; --bg-2:#eef3f3; --card:#fff; --line:#e0e7e8;
+  --code-bg:#0f2b34; --code-ink:#dff3f2;
+  --sans:"Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono","Cascadia Code","SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:84px}
+body{margin:0; font-family:var(--sans); color:var(--ink); background:var(--bg);
+  -webkit-font-smoothing:antialiased; line-height:1.6}
+
+/* ---- top bar ---- */
+.bar{position:sticky; top:0; z-index:30; background:rgba(246,248,248,.94);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.bar .in{max-width:1240px; margin:0 auto; padding:10px 26px; display:flex;
+  align-items:center; gap:16px}
+.bar img{height:34px; width:auto; mix-blend-mode:multiply}
+.bar .crumb{font-size:12px; font-weight:800; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--teal)}
+.bar .spacer{flex:1}
+.bar a.back{font-size:13px; font-weight:700; color:var(--petrol); text-decoration:none;
+  border:1px solid var(--line); background:var(--card); padding:.45em 1em; border-radius:2px}
+.bar a.back:hover{border-color:var(--petrol)}
+
+/* ---- hero ---- */
+.hero{max-width:1240px; margin:0 auto; padding:52px 26px 30px}
+.hero .kicker{margin:0 0 12px; font-size:13px; font-weight:800; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--teal)}
+.hero h1{margin:0; font-size:clamp(32px,5vw,54px); line-height:1.05; letter-spacing:-.02em;
+  color:var(--petrol); font-weight:800; max-width:18ch}
+.hero .rule{width:72px; height:6px; border-radius:3px; background:var(--yellow); margin:22px 0 22px}
+.meta{display:flex; flex-wrap:wrap; gap:10px; margin:0; padding:0; list-style:none}
+.meta li{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--turq);
+  padding:.5em .9em; border-radius:2px}
+.meta .k{display:block; font-size:10.5px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted)}
+.meta .v{font-size:14px; font-weight:700; color:var(--slate)}
+
+/* ---- layout ---- */
+.layout{max-width:1240px; margin:0 auto; padding:14px 26px 80px;
+  display:grid; grid-template-columns:236px minmax(0,1fr); gap:44px; align-items:start}
+.toc{position:sticky; top:78px; max-height:calc(100vh - 100px); overflow-y:auto;
+  border-left:2px solid var(--line); padding-left:16px}
+.toc-h{margin:0 0 10px; font-size:11px; font-weight:800; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted)}
+.toc ul{list-style:none; margin:0; padding:0}
+.toc li{margin:0}
+.toc a{display:block; padding:3px 0; font-size:13.5px; line-height:1.35; color:var(--muted);
+  text-decoration:none}
+.toc a:hover{color:var(--petrol)}
+.toc .l1 a{margin-top:12px; font-weight:800; font-size:12px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--petrol)}
+.toc .l2 a{padding-left:2px}
+
+/* ---- content ---- */
+.doc{min-width:0; max-width:78ch}
+.doc h1{margin:56px 0 6px; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
+  color:var(--petrol); border-top:4px solid var(--yellow); padding-top:18px}
+.doc h2{margin:44px 0 4px; font-size:clamp(20px,2.6vw,25px); font-weight:800; letter-spacing:-.01em;
+  color:var(--petrol)}
+.doc h3{margin:30px 0 4px; font-size:16px; font-weight:800; letter-spacing:.02em; color:var(--teal)}
+.doc p{margin:.85em 0; color:var(--slate); font-size:16px}
+.doc hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+.doc a{color:var(--petrol)}
+.doc strong{color:var(--ink)}
+.doc em{color:var(--muted)}
+.doc ul,.doc ol{color:var(--slate); font-size:16px}
+
+/* code */
+.doc code{font-family:var(--mono); font-size:.88em; background:var(--bg-2);
+  border:1px solid var(--line); border-radius:3px; padding:.1em .38em; color:var(--petrol-d)}
+.doc pre{background:var(--code-bg); color:var(--code-ink); border-radius:3px;
+  border-left:4px solid var(--turq); padding:16px 18px; overflow-x:auto; margin:1.1em 0}
+.doc pre code{background:none; border:0; padding:0; color:inherit; font-size:13.5px; line-height:1.55}
+
+/* tables */
+.tw{overflow-x:auto; margin:1.2em 0; border:1px solid var(--line); border-radius:2px; background:var(--card)}
+.doc table{border-collapse:collapse; width:100%; font-size:14px}
+.doc th{text-align:left; font-family:var(--mono); font-size:11px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--teal);
+  background:var(--bg-2); border-bottom:1px solid var(--line); padding:10px 14px; white-space:nowrap}
+.doc td{border-bottom:1px solid var(--line); padding:10px 14px; color:var(--slate);
+  vertical-align:top; line-height:1.5}
+.doc tbody tr:last-child td{border-bottom:0}
+.doc td:first-child{color:var(--petrol); font-weight:700; white-space:nowrap}
+.doc td code{white-space:nowrap}
+
+/* callouts */
+.callout{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--petrol);
+  border-radius:2px; padding:2px 20px; margin:1.3em 0}
+.callout p{font-size:15px}
+
+/* downloadable file button */
+.doc p:has(> a.dl:only-child){margin:.6em 0 1.4em}
+a.dl{display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:800;
+  font-size:14.5px; color:#fff; background:var(--petrol); border-radius:4px; padding:.7em 1.3em;
+  box-shadow:0 2px 8px rgba(0,86,125,.18)}
+a.dl:hover{background:var(--petrol-d)}
+
+/* exercises */
+.doc p.task{position:relative; background:var(--card); border:1px solid var(--line);
+  border-left:4px solid var(--turq); border-radius:2px; padding:14px 18px 14px 74px;
+  margin:1.5em 0 0; font-size:16px; color:var(--ink)}
+.tid{position:absolute; left:16px; top:15px; font-family:var(--mono); font-weight:800; font-size:13px;
+  color:var(--petrol); background:var(--bg-2); border-radius:2px; padding:.25em .55em; letter-spacing:.02em}
+details.hint{margin:0 0 .2em; border:1px solid var(--line); border-top:0; background:var(--bg-2);
+  border-radius:0 0 2px 2px; font-size:14.5px}
+details.hint summary{cursor:pointer; list-style:none; padding:.5em 18px; font-weight:700;
+  font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+details.hint summary::-webkit-details-marker{display:none}
+details.hint summary::before{content:"▸ "; color:var(--turq)}
+details[open].hint summary::before{content:"▾ "}
+details.hint summary:hover{color:var(--petrol)}
+.hint-body{padding:0 18px .8em; color:var(--slate); font-style:italic}
+p.wrapup{background:rgba(242,210,0,.14); border:1px solid rgba(242,210,0,.5);
+  border-radius:2px; padding:14px 18px; font-size:15.5px; color:var(--ink)}
+
+footer{border-top:1px solid var(--line); background:var(--bg)}
+.foot{max-width:1240px; margin:0 auto; padding:20px 26px; display:flex; gap:16px;
+  flex-wrap:wrap; justify-content:space-between; font-size:13px; color:var(--muted)}
+.foot .slogan{font-weight:700; color:var(--slate)}
+
+@media (max-width:960px){
+  .layout{grid-template-columns:1fr; gap:0}
+  .toc{position:static; max-height:none; border-left:0; border-top:1px solid var(--line);
+    padding:16px 0 24px; margin-bottom:8px}
+  .toc ul{columns:2; column-gap:24px}
+}
+@media print{
+  .bar,.toc{display:none}
+  body{background:#fff}
+  .layout{display:block; padding:0 0 20px}
+  details.hint{background:#fff}
+  details.hint > .hint-body{display:block !important}
+  .doc h1,.doc h2{break-after:avoid}
+  p.task{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="in">
+    <img src="../MajalLogo.jpg" alt="Majal">
+    <span class="crumb">Day 1 · Lab 1</span>
+    <span class="spacer"></span>
+    <a class="back" href="../index.html">← Course</a>
+  </div>
+</div>
+
+<div class="hero">
+  <p class="kicker">Majal Initiative · Cloud Computing Bootcamp</p>
+  <h1>Lab 1 — Launch a server, then take the wheel</h1>
+  <div class="rule"></div>
+  <ul class="meta"><li><span class="k">Duration</span><span class="v">A full day, across two sessions</span></li><li><span class="k">Environment</span><span class="v">Alibaba Cloud console + a terminal on your own laptop</span></li><li><span class="k">Level</span><span class="v">Beginner</span></li><li><span class="k">Format</span><span class="v">Two milestones and two tasks, each with a hint</span></li></ul>
+</div>
+
+<div class="layout">
+<nav class="toc" aria-label="Lab contents"><p class="toc-h">Contents</p><ul>
+<li class="l2"><a href="#objectives">Objectives</a></li>
+<li class="l2"><a href="#setup">Setup</a></li>
+<li class="l2"><a href="#1-launch-your-first-server">1. Launch your first server</a></li>
+<li class="l2"><a href="#2-sorting-salem-s-startup-stack">2. Sorting Salem&#x27;s startup stack</a></li>
+<li class="l2"><a href="#3-connect-to-your-server">3. Connect to your server</a></li>
+<li class="l2"><a href="#4-permissions-why-the-key-needed-chmod-400">4. Permissions — why the key needed chmod 400</a></li>
+<li class="l2"><a href="#5-write-report-sh">5. Write report.sh</a></li>
+<li class="l2"><a href="#6-finish-line">6. Finish line</a></li>
+</ul></nav>
+<main class="doc">
+<h2 id="objectives">Objectives</h2>
+<p>By the end of this lab you will have launched a real virtual machine in a real
+data centre, given it a public address, connected to it over SSH from your own
+laptop, and written a small script that runs <em>on the server</em> and reports on
+itself. The server you build here is the one every other day of this week
+deploys onto — do not delete it.</p>
+<h2 id="setup">Setup</h2>
+<p>You need three things before you start: an <strong>Alibaba Cloud console login</strong> (your
+instructor invited you), a <strong>terminal</strong>, and somewhere safe to keep a downloaded
+key file.</p>
+<ul>
+<li><strong>macOS / Linux:</strong> use the built-in Terminal.</li>
+<li><strong>Windows:</strong> install <strong>MobaXterm</strong>. It handles the key file for you and saves
+you a fight with file permissions. Everything after the connection step is
+identical.</li>
+</ul>
+<div class="callout"><p><strong>How to use this lab:</strong> read each task, try to build the answer yourself, and
+open the hint only if you need a nudge. The point is to <em>derive</em> it, not to
+copy it.</p></div>
+<div class="callout"><p><strong>This costs real money and is really on the internet.</strong> One small server for
+the whole week. Do not spin up extras, and follow Friday's cleanup steps.</p></div>
+<hr />
+<h2 id="1-launch-your-first-server">1. Launch your first server</h2>
+<p>Console layouts differ between tenants and change over time. The steps below name
+<em>what</em> to do; follow your instructor's live screen for exactly where the buttons
+are today.</p>
+<p class="task"><span class="tid">1.1</span>Create your <strong>SSH key pair before you start the instance wizard</strong>, and
+download the <code>.pem</code> file somewhere you will not lose it.</p>
+<details class="hint"><summary>Hint</summary><div class="hint-body">ECS → Network &amp; Security → Key Pairs → Create Key Pair. You can only
+download this file once — there is no second chance and no reset.</div></details>
+<p class="task"><span class="tid">1.2</span>Move the downloaded key somewhere sensible and lock it down so only you
+can read it.</p>
+<pre><code class="language-bash">mv ~/Downloads/______.pem ~/my-key.pem   # fill in the name you gave your key
+chmod 400 ~/my-key.pem
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">on Windows with MobaXterm you skip this — point the session at the .pem
+file instead. You will find out exactly what 400 means in section 4.</div></details>
+<p class="task"><span class="tid">1.3</span>Create the instance. Match these settings exactly, or the rest of the
+week stops lining up:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+  <th>Setting</th>
+  <th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Billing</td>
+  <td>Pay-As-You-Go</td>
+</tr>
+<tr>
+  <td>Instance type</td>
+  <td>the small one your instructor names (2 vCPU / 4 GB)</td>
+</tr>
+<tr>
+  <td>Image</td>
+  <td><strong>Ubuntu 22.04 LTS</strong></td>
+</tr>
+<tr>
+  <td>Network → public IP</td>
+  <td>tick <strong>Assign Public IPv4 Address</strong>, pay by traffic, 200 Mbps</td>
+</tr>
+<tr>
+  <td>Logon credentials</td>
+  <td><strong>root</strong> (not <code>ecs-user</code>)</td>
+</tr>
+<tr>
+  <td>Key pair</td>
+  <td>the one you made in 1.1</td>
+</tr>
+<tr>
+  <td>Instance name</td>
+  <td>something unique to you — you are in a shared tenant</td>
+</tr>
+<tr>
+  <td>Security group</td>
+  <td>the default is fine today</td>
+</tr>
+</tbody>
+</table></div>
+<details class="hint"><summary>Hint</summary><div class="hint-body">the public IP tickbox IS your EIP. There is no separate &quot;create an EIP&quot;
+step afterwards.</div></details>
+<p class="task"><span class="tid">1.4</span>Launch it, wait for the state to read <strong>Running</strong>, and write down the
+public IP. You will paste it constantly this week.</p>
+<pre><code class="language-bash">ping &lt;your-EIP&gt;
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">if ping times out, that is fine — plenty of firewalls drop ping. Running
+plus a public IP is the real success condition. The proof is SSH, in section 3.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> your instance is running and healthy but nobody on the
+internet can reach it. Name two different settings that could cause that, and say
+which one you would check first.</p>
+<hr />
+<h2 id="2-sorting-salem-s-startup-stack">2. Sorting Salem's startup stack</h2>
+<p>Your friend Salem is launching a startup and keeps bragging about all the &quot;cloud&quot;
+tools he uses — but he is fuzzy on what he actually manages versus what the
+provider manages for him.</p>
+<p class="task"><span class="tid">2.1</span>Label each item <strong>IaaS</strong>, <strong>PaaS</strong> or <strong>SaaS</strong>.</p>
+<pre><code class="language-text">1. A bare Ubuntu virtual machine he installs his code on   →  ______
+2. Gmail, which his whole team uses for email              →  ______
+3. A managed database he just connects to (no OS to patch) →  ______
+4. Salesforce, which his sales team logs into              →  ______
+5. An ECS instance (like the one you just launched)        →  ______
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">ask &quot;do I manage the operating system?&quot; Yes → probably IaaS. &quot;Do I just
+log in and use finished software?&quot; → SaaS. Something in between, a managed
+service you build on → PaaS.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> two items on that list get the same answer. Which two, and
+why does that surprise people?</p>
+<hr />
+<h2 id="3-connect-to-your-server">3. Connect to your server</h2>
+<p class="task"><span class="tid">3.1</span>Connect from your laptop.</p>
+<pre><code class="language-bash">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body"><code>-i</code> means &quot;identify me with this private key file&quot;. The first time it
+asks whether to trust the server — type <code>yes</code>. You are in when the prompt turns
+into something like <code>root@iZ...:~#</code>.</div></details>
+<p class="task"><span class="tid">3.2</span>Prove to yourself where you actually are. Run all four, and read the
+answers.</p>
+<pre><code class="language-bash">pwd
+hostname
+whoami
+cat /etc/os-release | grep PRETTY_NAME
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body"><code>hostname</code> is the interesting one — compare it to your laptop's. If it
+matches your laptop, you are not on the server.</div></details>
+<p class="task"><span class="tid">3.3</span>Make a working area you will reuse tomorrow.</p>
+<pre><code class="language-bash">mkdir day1 &amp;&amp; cd day1
+</code></pre>
+<p class="wrapup"><strong>Wrap-up question:</strong> the prompt changed when you connected. Whose computer is
+now running the commands you type, and how would you prove it to someone who did
+not believe you?</p>
+<hr />
+<h2 id="4-permissions-why-the-key-needed-chmod-400">4. Permissions — why the key needed <code>chmod 400</code></h2>
+<p>Every file carries ten characters describing who may do what to it.</p>
+<pre><code class="language-text">-rw-r--r--  1 root root  220 Jul  5 10:00 notes.txt
+
+ -   rw-   r--   r--
+type owner group others
+</code></pre>
+<p>Each group of three is <strong>r</strong>ead (4), <strong>w</strong>rite (2), e<strong>x</strong>ecute (1), and <code>chmod</code>
+takes the sum for each group.</p>
+<p class="task"><span class="tid">4.1</span>On the server, create a file and look at its default permissions, then
+change them and look again.</p>
+<pre><code class="language-bash">echo &quot;hello&quot; &gt; test.txt
+ls -l test.txt
+chmod 400 test.txt
+ls -l test.txt
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">watch which letters disappear. 4+0+0 means owner-read, and nothing at
+all for group or others.</div></details>
+<p class="task"><span class="tid">4.2</span>Explain, in one sentence, why SSH refuses to use a private key whose
+mode is <code>644</code>.</p>
+<details class="hint"><summary>Hint</summary><div class="hint-body">644 means group and others can read the file. Think about who else might
+have an account on the machine holding your key.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> a private key must <strong>not</strong> be executable, but a script
+<strong>must</strong> be. Why does the same <code>x</code> bit matter in opposite directions?</p>
+<hr />
+<h2 id="5-write-report-sh">5. Write <code>report.sh</code></h2>
+<p>Your classmate Reem keeps losing track of which server she is logged into and
+what state it is in. Write her a script that prints a tidy report. This one task
+uses variables, <code>$1</code>, redirection and a pipe all together.</p>
+<p class="task"><span class="tid">5.1</span>Create the file on the <strong>server</strong> (not on your laptop) and fill in every
+blank.</p>
+<pre><code class="language-bash">#!/bin/bash
+# report.sh - usage: ./report.sh &quot;&lt;your name&gt;&quot;
+
+export OWNER=&quot;____&quot;                 # read the first argument into OWNER
+
+echo &quot;=== Server report ===&quot;  ____  report.txt   # start the file (overwrite)
+echo &quot;Owner:  $OWNER&quot;         ____  report.txt   # append
+echo &quot;Host:   $(hostname)&quot;    &gt;&gt;    report.txt
+echo &quot;When:   $( ____ )&quot;      &gt;&gt;    report.txt   # today's date and time
+echo &quot;Uptime: $(uptime -p)&quot;   &gt;&gt;    report.txt
+
+echo &quot;Report saved for $OWNER!&quot;
+cat report.txt | grep ____                       # pull just the Owner line back out
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">create it with <code>nano report.sh</code>; save with <code>Ctrl+O</code>, <code>Enter</code>, <code>Ctrl+X</code>.
+Start the file with a single <code>&gt;</code> and append every line after it with <code>&gt;&gt;</code>.
+<code>$(command)</code> runs a command and drops its output straight into your text.</div></details>
+<p class="task"><span class="tid">5.2</span>Make it runnable and run it.</p>
+<pre><code class="language-bash">chmod +x report.sh
+./report.sh &quot;Reem&quot;
+cat report.txt
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">if you get <code>Permission denied</code>, you skipped the <code>chmod +x</code>. If the file
+only has one line in it, you used <code>&gt;</code> where you needed <code>&gt;&gt;</code>.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> run the script twice in a row. Does <code>report.txt</code> grow, or
+stay the same size? Explain what that tells you about the first <code>&gt;</code>.</p>
+<hr />
+<h2 id="6-finish-line">6. Finish line</h2>
+<p>You are done when all of these are true:</p>
+<ul>
+<li>Your instance shows <strong>Running</strong> and has a <strong>public IP</strong> you have written down.</li>
+<li>Your <code>.pem</code> key file is saved and <code>chmod 400</code> has been applied to it.</li>
+<li>You can connect over SSH and move around the filesystem confidently.</li>
+<li><code>report.sh</code> runs, builds <code>report.txt</code> with <code>&gt;</code> then <code>&gt;&gt;</code>, injects <code>$(date)</code>,
+and pulls the owner line back out with a pipe.</li>
+</ul>
+<p>Stuck at any point? <code>man chmod</code> and <code>man grep</code> are on the server (press <code>q</code> to
+quit a manual page), and a teaching assistant is available during lab hours.</p>
+<p><strong>Leave the server running.</strong> Tomorrow you put your app in a container and deploy
+it onto this exact machine.</p>
+
+</main>
+</div>
+
+<footer>
+  <div class="foot">
+    <span class="slogan">Majal · Unlocking your tech horizons</span>
+    <span>Cloud Computing 2026</span>
+  </div>
+</footer>
+<script>
+/* Highlight the section you're reading in the contents rail. */
+(function () {
+  var links = {}, heads = [];
+  document.querySelectorAll('.toc a').forEach(function (a) {
+    var el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+    if (el) { links[el.id] = a; heads.push(el); }
+  });
+  var current = null;
+  function sync() {
+    var best = null;
+    heads.forEach(function (h) {
+      if (h.getBoundingClientRect().top < 140) best = h;
+    });
+    if (best === current) return;
+    if (current) links[current.id].style.color = '';
+    current = best;
+    if (current) links[current.id].style.color = 'var(--petrol)';
+  }
+  addEventListener('scroll', sync, { passive: true });
+  sync();
+})();
+</script>
+</body>
+</html>

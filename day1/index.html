@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Majal — Cloud Computing Day 1: Your first server</title>
+  <link rel="stylesheet" href="../shared/dist/reset.css">
+  <link rel="stylesheet" href="../shared/dist/reveal.css">
+  <link rel="stylesheet" href="../shared/css/course.css?v=1">
+  <style>
+    /* ---- day 1 layouts — built from the brand kernel, never added to course.css ---- */
+
+    /* card grid — the workhorse concept slide */
+    .k2 { display: grid; gap: 14px; margin-top: .3em; }
+    .k2.c2 { grid-template-columns: 1fr 1fr; }
+    .k2.c3 { grid-template-columns: repeat(3,1fr); }
+    .k2.c4 { grid-template-columns: repeat(4,1fr); }
+    .k2 .card h3 { margin: 0 0 .3em; font-size: .82em; color: var(--petrol); letter-spacing: -.01em; }
+    .k2 .card h3 .tag { font-family: var(--mono); font-size: .58em; font-weight: 700; color: var(--muted);
+      letter-spacing: .05em; text-transform: uppercase; margin-left: .4em; }
+    .k2 .card p { margin: 0; font-size: .64em; color: var(--muted); line-height: 1.42; }
+    .k2 .card .ex { display: block; margin-top: .55em; font-size: .6em; color: var(--slate);
+      border-top: 1px dashed var(--line); padding-top: .45em; }
+    .k2 .card .ex b { color: var(--petrol); font-weight: 700; }
+
+    /* pipeline / stage strip */
+    .pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: .55em;
+      border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+    .pipe.p5 { grid-template-columns: repeat(5, 1fr); }
+    .pipe .stg { padding: .75em .85em; border-right: 1px solid var(--line); background: var(--panel); }
+    .pipe .stg:last-child { border-right: 0; }
+    .pipe .stg .num { font-family: var(--mono); font-size: .5em; font-weight: 800; letter-spacing: .16em;
+      color: var(--turq); text-transform: uppercase; }
+    .pipe .stg h3 { margin: .12em 0 .3em; font-size: .74em; color: var(--petrol); }
+    .pipe .stg .q { font-size: .56em; color: var(--muted); line-height: 1.38; min-height: 3.4em; }
+    .pipe .stg .tools { margin-top: .5em; border-top: 1px dashed var(--line); padding-top: .45em;
+      display: flex; flex-wrap: wrap; gap: .28em; }
+    .pipe .stg .tools span { font-family: var(--mono); font-size: .5em; font-weight: 700; letter-spacing: .04em;
+      background: rgba(0,86,125,.09); color: var(--petrol); border-radius: 999px; padding: .28em .65em; }
+
+    /* a two-column split: prose/cards beside a figure or code */
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-top: .4em; }
+    .two.wide-l { grid-template-columns: 1.25fr .75fr; }
+    .shot { width: 100%; border: 1px solid var(--line); border-radius: 3px; display: block; }
+    .figcap { font-family: var(--mono); font-size: .52em; color: var(--muted); margin-top: .4em; }
+
+    /* the "then vs now" contrast card */
+    .card.alt { border-top-color: var(--muted); }
+    .card ul { margin: .2em 0 0; padding-left: 1.1em; }
+    .card li { font-size: .64em; color: var(--muted); line-height: 1.55; margin-bottom: .2em; }
+    .card li b { color: var(--petrol); }
+
+    .rule p { margin: 0; }
+    .rule b { color: var(--petrol); }
+    .steps .rule { margin: .45em 0; font-size: .74em; }
+    .fill { color: var(--bad); font-weight: 700; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ============================================================ SESSION 1 -->
+
+    <section>
+      <p class="kicker">Day 1 · Session 1 — welcome to the cloud</p>
+      <h1>By the end of today, a computer<br>you have never touched will<br>answer to you.</h1>
+      <p class="sub" style="margin-top:1.1em;max-width:30em">This morning you launch a real server in a real data
+      centre and give it a public address. This afternoon you stop clicking at it and start driving it from a
+      terminal. Everything you deploy for the rest of the week lands on the machine you create today.</p>
+      <aside class="notes">Presenter: open by asking who has ever rented a computer they never saw. Land the
+      promise — a real machine with a real address, not a simulator. Do NOT start with the pricing model or a
+      vendor tour; that kills the room in the first two minutes.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">The week · where all five days are going</p>
+      <h2>Five days, one app, live on the internet</h2>
+      <div class="pipe p5">
+        <div class="stg"><div class="num">Day 1</div><h3>A server of your own</h3>
+          <div class="q">Launch it, give it a public address, and drive it from the terminal.</div>
+          <div class="tools"><span>ECS</span><span>EIP</span><span>SSH</span></div></div>
+        <div class="stg"><div class="num">Day 2</div><h3>Put it in a container</h3>
+          <div class="q">Package the app and deploy it — first by hand, then automatically.</div>
+          <div class="tools"><span>Docker</span><span>GitHub</span></div></div>
+        <div class="stg"><div class="num">Day 3</div><h3>The network it lives on</h3>
+          <div class="q">IPs, subnets and firewalls — why traffic reaches you, or does not.</div>
+          <div class="tools"><span>VPC</span><span>Subnets</span></div></div>
+        <div class="stg"><div class="num">Day 4</div><h3>Managed services &amp; scale</h3>
+          <div class="q">Stop running things yourself, and survive more than one visitor.</div>
+          <div class="tools"><span>OSS</span><span>K8s</span></div></div>
+        <div class="stg"><div class="num">Day 5</div><h3>Polish and present</h3>
+          <div class="q">Document the whole thing and show it to the room.</div>
+          <div class="tools"><span>Docs</span><span>Demo</span></div></div>
+      </div>
+      <div class="callout" style="margin-top:.8em">Every day adds one piece to the <b>same</b> project. Nothing
+      this week is a throwaway exercise.</div>
+      <aside class="notes">Presenter: point at Day 1 and say "this is the only day where you have nothing yet."
+      Keep this slide short — it is a map, not content.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">The lab project · what you are actually building</p>
+      <h2>One badge page, on the internet, that is unmistakably yours</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>It is a real web app <span class="tag">node</span></h3>
+          <p>A small "Cloud Explorer Badge" page with a photo-booth feature. It runs on your laptop today and on
+          your server by the end of the week.</p></div>
+        <div class="card"><h3>You make it yours <span class="tag">personalise</span></h3>
+          <p>Your name, your colours, your favourite movie. Two students' badges should never look the same.</p></div>
+        <div class="card"><h3>It ends up public <span class="tag">deployed</span></h3>
+          <p>By Day 5 it answers on a public address that anyone in the room — or anyone at all — can open.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.85em">You are not building a demo you throw away on Friday.
+      You are building the thing you will show people.</div>
+      <aside class="notes">Presenter: show last cohort's badges if you have them. Land that personalisation is
+      not decoration — it is how they will tell their own deployment apart from a classmate's.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Before you start · three things installed</p>
+      <h2>Get these three installed before we go any further</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>A GitHub account <span class="tag">day 2 onward</span></h3>
+          <p>Where your project lives and where deployment is triggered from.</p>
+          <span class="ex">Sign up at <b>github.com/signup</b> with an email you will keep.</span></div>
+        <div class="card"><h3>VS Code <span class="tag">editor</span></h3>
+          <p>Your editor for the week.</p>
+          <span class="ex">From <b>code.visualstudio.com</b>.</span></div>
+        <div class="card"><h3>Node.js v20+ <span class="tag">runtime</span></h3>
+          <p>So you can run the lab project on your own laptop before it ever reaches a server.</p>
+          <span class="ex">From <b>nodejs.org</b> — check with <b>node -v</b>.</span></div>
+      </div>
+      <div class="callout hot" style="margin-top:.85em"><b>This costs real money and is really on the internet.</b>
+      One small server for the whole week. Do not spin up extras, and follow the cleanup steps on Friday.</div>
+      <aside class="notes">Presenter: do a live show of hands on each of the three. Anyone missing one fixes it
+      now, not at Milestone 1 — a missing Node install stalls them for the whole afternoon.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Context · who you are learning this with</p>
+      <h2>Saudi AZM builds the systems other Saudi organisations run on</h2>
+      <div class="two wide-l">
+        <div>
+          <div class="k2 c1" style="grid-template-columns:1fr">
+            <div class="card"><h3>Saudi AZM <span class="tag">Tadawul 9534</span></h3>
+              <p>A leading IT company in Riyadh. Both private- and government-sector entities rely on AZM to build
+              their digital solutions.</p></div>
+            <div class="card"><h3>AZEM Technical <span class="tag">عازم</span></h3>
+              <p>A fully remote graduate programme across <b>Cloud Computing</b>, <b>Software Testing &amp; QA</b>
+              and <b>Software Development</b>. Six months that pack in about a year of content. Currently in its
+              2nd batch; the next starts around the end of 2026.</p></div>
+          </div>
+        </div>
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+        <div class="card alt"><h3>What a trainee actually touches</h3>
+          <ul>
+            <li><b>Backend:</b> PHP Laravel · Node · Python · Golang</li>
+            <li><b>Messaging:</b> RabbitMQ · MQTT</li>
+            <li><b>Search:</b> Elasticsearch · OpenSearch</li>
+            <li><b>Containers:</b> Kubernetes · OpenShift</li>
+            <li><b>Observability:</b> ELK · Prometheus / Grafana</li>
+          </ul>
+          <span class="ex" style="display:block;margin-top:.5em;font-size:.6em;color:var(--slate);border-top:1px dashed var(--line);padding-top:.45em">
+          Real projects with real impact — other teams depend on your work.</span></div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:.7em">Questions about the programme: ask your instructor
+      <b>Ali</b>, or <b class="mono">ali.aljaffer@azm.com</b>.</div>
+      <aside class="notes">Presenter: keep this to two minutes. It is context and an invitation, not a sales
+      pitch — the room came for the cloud.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · the one-sentence definition</p>
+      <h2>The cloud is renting someone else's computers, by the hour</h2>
+      <div class="two">
+        <div>
+          <div class="callout" style="margin-bottom:.7em">That is genuinely it. The cloud is not magic and it is
+          not one place — it is giant buildings full of computers owned by a provider, and you rent slices of
+          them through a website called the <b>console</b>.</div>
+          <p class="sub" style="font-size:.68em;line-height:1.55">You can give the slice back the moment you are
+          done, and stop paying for it. This week your provider is <b>Alibaba Cloud</b>.</p>
+        </div>
+        <div>
+          <img class="shot" src="assets/datacenter.jpg" alt="Rows of racks inside a data centre">
+          <div class="figcap">A data centre — the building your "cloud" server is physically standing in.</div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: land "someone else's computer" hard. The single most common beginner
+      belief to break is that the cloud is a different kind of computing rather than a different kind of
+      renting.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Why rent · the trade you are making</p>
+      <h2>Why anyone would rent instead of just buying a machine</h2>
+      <div class="k2 c2">
+        <div class="card alt"><h3>Buying your own server</h3>
+          <ul>
+            <li>Thousands of riyals <b>up front</b></li>
+            <li>Wait <b>days</b> for hardware to arrive</li>
+            <li><b>You</b> fix it when it breaks</li>
+            <li>One machine, in one building</li>
+          </ul></div>
+        <div class="card"><h3>Renting from the cloud</h3>
+          <ul>
+            <li>A few <b>halalas per hour</b>, stop anytime</li>
+            <li>Ready in about <b>a minute</b></li>
+            <li>The <b>provider</b> handles the hardware</li>
+            <li>Data centres <b>all over the world</b></li>
+          </ul></div>
+      </div>
+      <div class="callout" style="margin-top:.85em">The thing you are really buying is <b>speed of change</b> —
+      being wrong for an hour instead of being wrong for three years.</div>
+      <aside class="notes">Presenter: ask the room which row matters most to a startup and which to a bank.
+      Different answers are correct — that is the point.</aside>
+    </section>
+
+    <section data-w="responsibility">
+      <p class="kicker">The three flavours · who manages what</p>
+      <h2>Drag the line — everything above it is your problem</h2>
+      <iframe class="wframe" style="height:520px"
+              src="widgets/responsibility.html?v=1"
+              title="Drag the management boundary between you and the provider" scrolling="auto"></iframe>
+      <aside class="notes">Presenter: start on IaaS (the default). Drag DOWN to on-premises first — "this is
+      what your university server room is." Then drag up to SaaS and ask what is left for them to manage.
+      Land: IaaS/PaaS/SaaS is not three products, it is one line in three places. Come back to the IaaS
+      position and say "this is what you launch in forty minutes."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">The memory hook · if you forget everything else</p>
+      <h2>Think of it as three ways to get a meal</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>IaaS <span class="tag">you cook</span></h3>
+          <p>The provider hands you raw ingredients — a bare virtual computer. You install everything and you are
+          responsible for it. Most control, most work.</p>
+          <span class="ex">Concretely: <b>the ECS instance you launch today</b>.</span></div>
+        <div class="card"><h3>PaaS <span class="tag">half-prepared</span></h3>
+          <p>A kitchen with the meal half made; you add your part. No hardware and no operating system to manage.</p>
+          <span class="ex">Concretely: <b>a managed database, or object storage on Day 4</b>.</span></div>
+        <div class="card"><h3>SaaS <span class="tag">cooked and served</span></h3>
+          <p>The meal arrives finished. You log in and use it.</p>
+          <span class="ex">Concretely: <b>Gmail, Netflix, Google Docs</b>.</span></div>
+      </div>
+      <div class="callout" style="margin-top:.85em"><b>Infrastructure</b> = building blocks ·
+      <b>Platform</b> = a ready service you build on · <b>Software</b> = the finished product.
+      This week starts at IaaS and climbs toward PaaS.</div>
+      <aside class="notes">Presenter: this slide is the sentence they should still have in February. Say it
+      once, do not elaborate — the widget already did the work.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Vocabulary · the words in every menu this week</p>
+      <h2>Six words you will hear every single day</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>Region <span class="tag">where</span></h3>
+          <p>A geographic area with data centres — Riyadh, Singapore. You pick one near your users.</p></div>
+        <div class="card"><h3>Availability Zone <span class="tag">az</span></h3>
+          <p>An isolated data centre <em>inside</em> a region.</p></div>
+        <div class="card"><h3>ECS <span class="tag">the service</span></h3>
+          <p>Elastic Compute Service — Alibaba's virtual machine service. Your computer in the cloud.</p></div>
+        <div class="card"><h3>Instance <span class="tag">the machine</span></h3>
+          <p>One running virtual machine. Yours is one instance.</p></div>
+        <div class="card"><h3>Image <span class="tag">the template</span></h3>
+          <p>The starting template for an instance, e.g. Ubuntu 22.04.
+          <em>Careful: "image" means something different for containers tomorrow.</em></p></div>
+        <div class="card"><h3>EIP <span class="tag">the address</span></h3>
+          <p>Elastic IP — a public internet address you attach so the world can reach your instance.</p></div>
+      </div>
+      <aside class="notes">Presenter: do not read all six. Read Region and EIP, and tell them the rest are on the
+      slide. Flag the "image" collision now so Day 2 does not confuse them.</aside>
+    </section>
+
+    <section data-w="reachability">
+      <p class="kicker">Networking · why a running server can still be invisible</p>
+      <h2>Send a packet and watch exactly where it dies</h2>
+      <iframe class="wframe" style="height:500px"
+              src="widgets/reachability.html?v=1"
+              title="A packet crossing the VPC boundary, the EIP and the security group" scrolling="auto"></iframe>
+      <aside class="notes">Presenter: send one packet with everything on — it arrives. Then remove the EIP and
+      send another: it never even enters the VPC. Land "your server can be perfectly healthy and completely
+      unreachable." Then put the EIP back, shut port 22, and send again — a different failure, further along.
+      Tell them Day 3 is entirely about that second wall.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Before you click launch · two decisions</p>
+      <h2>Two settings you make today that you cannot redo later</h2>
+      <div class="steps">
+        <div class="rule"><span class="n">1</span><p><b>The SSH key pair.</b> This is your login credential. You
+        download a <b class="mono">.pem</b> file <b>once</b> and you can never download it again. Lose it and the
+        only fix is a new server. Guard it like a password — because it is one.</p></div>
+        <div class="rule"><span class="n">2</span><p><b>The security group.</b> A firewall wrapped around your
+        instance, deciding which ports the outside world may reach. The defaults are fine today; you will learn
+        exactly what it does on Day 3.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.9em">Create the key pair <b>first</b>, before you start the
+      instance wizard — otherwise you have to leave the page half-finished to go and make one.</div>
+      <aside class="notes">Presenter: this is the slide that prevents the most support tickets. Say the words
+      "you cannot download it twice" out loud and make them repeat it back.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task 1 · sorting Salem's startup stack</p>
+      <h2>Label each one IaaS, PaaS or SaaS</h2>
+      <p class="sub" style="font-size:.72em;max-width:44em">Your friend Salem is launching a startup and keeps
+      bragging about all the "cloud" tools he uses — but he is fuzzy on what he actually manages versus what the
+      provider manages. Sort them out for him.</p>
+      <div class="codeblock" style="margin-top:.6em">1. A bare Ubuntu virtual machine he installs his code on   →  <span class="fill">______</span>
+2. Gmail, which his whole team uses for email              →  <span class="fill">______</span>
+3. A managed database he just connects to (no OS to patch) →  <span class="fill">______</span>
+4. Salesforce, which his sales team logs into              →  <span class="fill">______</span>
+5. An ECS instance (like the one you are about to launch)  →  <span class="fill">______</span></div>
+      <div class="callout" style="margin-top:.8em"><b>Stuck?</b> Ask: do I manage the operating system? Yes →
+      probably IaaS. Do I just log in and use finished software? → SaaS. Something in between, a managed service
+      you build on? → PaaS.</div>
+      <aside class="notes">Presenter: three minutes, in pairs, no laptops. Debrief by asking for the reasoning,
+      not the letter — 1 and 5 are the same answer and someone always misses that.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Milestone 1 · launch your first server</p>
+      <h2>Build the foundation everything else this week lands on</h2>
+      <div class="steps">
+        <div class="rule"><span class="n">1</span><p><b>Log in</b> to the Alibaba Cloud console and check the
+        <b>Region</b> at the top matches your instructor's — everyone uses the same one.</p></div>
+        <div class="rule"><span class="n">2</span><p><b>Create the key pair first.</b>
+        ECS → Network &amp; Security → Key Pairs → Create Key Pair. Download the
+        <b class="mono">.pem</b> and save it somewhere safe.</p></div>
+        <div class="rule"><span class="n">3</span><p><b>Create the instance</b> — ECS → Instances → Create
+        Instance. The exact choices are on the next slide.</p></div>
+        <div class="rule"><span class="n">4</span><p><b>Launch and wait</b> for the state to show
+        <b>Running</b>, then copy the public IP and write it down.</p></div>
+      </div>
+      <div class="codeblock" style="margin-top:.7em">mv ~/Downloads/______.pem ~/my-key.pem   # the name you gave your key
+chmod 400 ~/my-key.pem                  # you will understand this exactly, this afternoon</div>
+      <aside class="notes">Presenter: console layouts differ per tenant and change over time — drive your own
+      screen and let them follow. This deck is the "why", your screen is the "where". Windows users: point them
+      at MobaXterm now rather than fighting chmod.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Milestone 1 · the choices that matter</p>
+      <h2>Match these settings exactly, or this week stops lining up</h2>
+      <div class="k2 c2">
+        <div class="card"><h3>Billing <span class="tag">pay-as-you-go</span></h3>
+          <p>Cheapest for a short course. Not subscription.</p></div>
+        <div class="card"><h3>Image <span class="tag">must match</span></h3>
+          <p><b>Ubuntu 22.04 LTS.</b> Every command this week assumes it.</p></div>
+        <div class="card"><h3>Instance type <span class="tag">small</span></h3>
+          <p>The one your instructor names — 2 vCPU / 4 GB is plenty.</p></div>
+        <div class="card"><h3>Public IP <span class="tag">tick it</span></h3>
+          <p>Network tab → <b>Assign Public IPv4 Address</b>, pay by traffic, 200 Mbps. <em>This is your
+          EIP</em> — no separate step after launch.</p></div>
+        <div class="card"><h3>Logon user <span class="tag">root</span></h3>
+          <p>If asked between <b>root</b> and <b>ecs-user</b>, choose <b>root</b>.</p></div>
+        <div class="card"><h3>Instance name <span class="tag">yours</span></h3>
+          <p>Advanced Settings → name it after yourself, so you can find it in a shared tenant.</p></div>
+      </div>
+      <aside class="notes">Presenter: the two that break the week are Ubuntu 22.04 and the public IP tickbox.
+      Say both twice. Walk the room during this one.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Session 1 · done</p>
+      <h2>You can now launch real, reachable cloud infrastructure</h2>
+      <div class="ackbox"><input type="checkbox" aria-label="instance running">
+        <div>Your instance shows <b>Running</b>, it has a <b>public IP</b> you have written down, and your
+        <b class="mono">.pem</b> key file is saved with <b class="mono">chmod 400</b> applied.</div></div>
+      <div class="callout" style="margin-top:.9em">Ping may time out — many firewalls drop it. That is not a
+      failure. <b>Running + a public IP = success.</b> The real proof is SSH, and that is the first thing you do
+      after the break.</div>
+      <div class="callout hot" style="margin-top:.6em">🎮 <b>Kahoot:</b> Day 1 · Session 1 — IaaS/PaaS/SaaS,
+      regions and zones, ECS, EIP.<br>
+      🔑 <b>Bring to Session 2:</b> your <b>EIP</b> and your <b class="mono">.pem</b> file.</div>
+      <aside class="notes">Presenter: run the Kahoot before the break, not after — it recovers the room's
+      attention. Check the ✅ list per-student while they play.</aside>
+    </section>
+
+    <!-- ============================================================ SESSION 2 -->
+
+    <section>
+      <p class="kicker">Day 1 · Session 2 — operating your server</p>
+      <h1>So far you have only clicked<br>at it. Now you drive it.</h1>
+      <p class="sub" style="margin-top:1.1em;max-width:30em">Real work on a server happens in a terminal, over a
+      connection called SSH — and almost everything for the rest of the week happens there. This is the session
+      where the cloud stops being a website and becomes a computer you operate.</p>
+      <div class="callout" style="margin-top:1em;max-width:32em">First time really living in a terminal? That
+      feeling is normal and it wears off today. You type the contents of the dark boxes and press Enter; lines
+      starting with <b class="mono">#</b> are notes, not commands.</div>
+      <aside class="notes">Presenter: name the discomfort out loud. Half the room has never used a shell and
+      will otherwise assume everyone else has.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">SSH · your secure line into the server</p>
+      <h2>The key pair is one lock split into two halves</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>Your private key <span class="tag">.pem</span></h3>
+          <p>The file you downloaded and can never download again. It stays on your laptop. You never send it,
+          paste it, or commit it.</p></div>
+        <div class="card"><h3>The server's public key <span class="tag">on the vm</span></h3>
+          <p>The matching half, already installed on the server when you selected the key pair at launch.</p></div>
+        <div class="card"><h3>They fit together <span class="tag">proof</span></h3>
+          <p>The server proves you hold the private half without you ever transmitting it. No password crosses
+          the wire.</p></div>
+      </div>
+      <div class="codeblock" style="margin-top:.8em">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;
+
+  -i ~/my-key.pem   →  identify me using this private key file
+  root@&lt;your-EIP&gt;   →  log in as user root, at your public address</div>
+      <div class="callout" style="margin-top:.7em">First connection asks whether to trust the server — type
+      <b class="mono">yes</b>. When your prompt becomes <b class="mono">root@iZ…:~#</b> you are in, and that
+      prompt is <b>the server</b> talking, not your laptop.</div>
+      <aside class="notes">Presenter: the prompt change is the moment. Point at it on your own screen and say
+      "everything I type now happens in a building I have never visited." Keep SSH shallow today — connect,
+      key, done.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Moving around · the filesystem is one tree</p>
+      <h2>Everything hangs off one root, and you are always standing somewhere</h2>
+      <div class="two">
+        <div class="k2 c2" style="grid-template-columns:1fr 1fr">
+          <div class="card"><h3>pwd <span class="tag">where am i</span></h3><p>Prints the directory you are
+          standing in right now.</p></div>
+          <div class="card"><h3>ls -l <span class="tag">what is here</span></h3><p>Lists the contents, with
+          permissions, owner, size and date.</p></div>
+          <div class="card"><h3>cd <span class="tag">move</span></h3><p>Changes directory.
+          <b class="mono">cd ..</b> goes up one level.</p></div>
+          <div class="card"><h3>mkdir <span class="tag">make</span></h3><p>Creates a directory.</p></div>
+        </div>
+        <div>
+          <div class="codeblock" style="font-size:.58em">$ pwd
+/root
+
+$ ls -l
+-rw-r--r--  1 root root  220 Jul  5 10:00 notes.txt
+
+$ mkdir day1 &amp;&amp; cd day1
+$ pwd
+/root/day1</div>
+          <div class="figcap">The tree starts at <b>/</b>. Everything else is somewhere below it.</div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: have everyone run pwd, ls -l, then mkdir day1 &amp;&amp; cd day1 and pwd
+      again. They keep that directory for tomorrow. Do not teach the whole filesystem hierarchy — they need
+      four commands, not a tour.</aside>
+    </section>
+
+    <section data-w="permissions">
+      <p class="kicker">Permissions · the ten characters in front of every file</p>
+      <h2>Build the mode and watch SSH refuse your key</h2>
+      <iframe class="wframe" style="height:496px"
+              src="widgets/permissions.html?v=1"
+              title="Toggle read, write and execute for owner, group and others" scrolling="auto"></iframe>
+      <aside class="notes">Presenter: it opens on 644 — the mode a freshly downloaded key actually has — and SSH
+      is already refusing it. Ask the room why before you touch anything. Then click chmod 400 and watch it flip
+      to accepted. Land: r=4, w=2, x=1, three groups, add them up. Finish on the ./report.sh line to set up the
+      script task — a key must NOT be executable, a script must be.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Permissions · reading the ten characters</p>
+      <h2>Three groups of three, and one letter in front</h2>
+      <div class="codeblock">-rw-r--r--  1 root root  220 Jul  5 10:00 notes.txt
+
+ -   rw-   r--   r--
+type owner group others</div>
+      <div class="k2 c3" style="margin-top:.8em">
+        <div class="card"><h3>chmod 400 <span class="tag">4,0,0</span></h3>
+          <p>Owner read only, nobody else anything. <b>This is what your SSH key needs</b> — and SSH refuses a
+          key that is more open than this.</p></div>
+        <div class="card"><h3>chmod 755 <span class="tag">7,5,5</span></h3>
+          <p>Owner everything; group and others may read and run. The normal mode for a program.</p></div>
+        <div class="card"><h3>chmod +x <span class="tag">shortcut</span></h3>
+          <p>Just add "executable", leaving the rest alone. What you use on a script.</p></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">That <b class="mono">chmod 400</b> you ran this morning
+      without knowing why? It means <b>only I can read this, and nobody else can touch it</b>.</div>
+      <aside class="notes">Presenter: close the loop explicitly — they ran this blind in Session 1 and now it
+      has a meaning. That callback is worth more than another example.</aside>
+    </section>
+
+    <section data-w="pipes">
+      <p class="kicker">Combining commands · the real power of the shell</p>
+      <h2>Watch seven lines go in and one come out</h2>
+      <iframe class="wframe" style="height:510px"
+              src="widgets/pipes.html?v=1"
+              title="Lines flowing through a grep filter, and a file being overwritten or appended to"
+              scrolling="auto"></iframe>
+      <aside class="notes">Presenter: in Pipe mode, switch the pattern between root, bash and nologin and let
+      them watch different lines survive — cat never changes, only the filter does. Then add | wc -l and land
+      that each stage only sees the previous stage's output. Switch to Redirect: press &gt;&gt; three times, then
+      press &gt; once. The room should gasp slightly. That is the lesson.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Pipes and redirection · the four symbols</p>
+      <h2>One sends output to a command, the other sends it to a file</h2>
+      <div class="two wide-l">
+        <div class="codeblock" style="font-size:.56em">cat /etc/passwd | grep root    # only lines containing "root"
+history | grep ssh             # every ssh command you have run
+
+echo "hello cloud" &gt;  hello.txt   #  &gt;   write  (OVERWRITES)
+echo "another line" &gt;&gt; hello.txt   #  &gt;&gt;  append (adds to the end)
+sort &lt; names.txt                   #  &lt;   feed a file in as input</div>
+        <div>
+          <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card"><h3>The pipe <b class="mono">|</b></h3>
+            <p>Plumbing. Data flows left → right, each command reshaping it. The command on the left never knows
+            the one on the right exists.</p></div>
+          </div>
+          <div class="callout hot" style="margin-top:.7em"><b>&gt; clobbers, &gt;&gt; appends.</b> Mixing these
+          up overwrites a file you meant to add to — the classic first-week mistake.</div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: make them run history | grep ssh on their own server. Seeing their own
+      morning played back sells pipes better than any example you can invent.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Environment variables · named values the shell hands out</p>
+      <h2>A value your shell passes to every program it starts</h2>
+      <div class="two">
+        <div class="codeblock">export NAME="Cloud Explorer"   # set one
+echo "Hello, $NAME"            # read it — $ pulls the value out
+echo $HOME                     # a built-in one
+env                            # list all of them</div>
+        <div>
+          <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card"><h3>Why you will care tomorrow</h3>
+            <p>The app you deploy this week reads its own web address out of a variable called
+            <b class="mono">SITE_ADDRESS</b>. Configuration lives in the environment, not in the code — that is
+            how the same image runs on your laptop and on your server.</p></div>
+          </div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: one minute. Set NAME, echo it, done. The payoff lands on Day 2 — do not
+      try to teach twelve-factor config today.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Scripts · the commands you stop retyping</p>
+      <h2>A script is just the commands you already type, saved in a file</h2>
+      <div class="two">
+        <div class="codeblock">#!/bin/bash
+# hello.sh
+NAME="$1"                        # $1 = the first argument
+echo "Hello, ${NAME:-world}!"    # or "world" if none given
+echo "This server is: $(hostname)"
+
+$ chmod +x hello.sh
+$ ./hello.sh Salem
+Hello, Salem!</div>
+        <div class="k2 c1" style="grid-template-columns:1fr">
+          <div class="card"><h3><b class="mono">#!/bin/bash</b> <span class="tag">shebang</span></h3>
+            <p>The first line says which interpreter runs this file.</p></div>
+          <div class="card"><h3><b class="mono">$1</b> <span class="tag">argument</span></h3>
+            <p>The first thing you passed in — like a function parameter.</p></div>
+          <div class="card"><h3><b class="mono">./</b> <span class="tag">right here</span></h3>
+            <p>"The file in this folder." Without it the shell searches its PATH instead and does not find you.</p></div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: connect chmod +x back to the permissions widget — without the x bit this
+      file is text, not a program. That is why the widget showed Permission denied.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · Reem cannot remember what her server is doing</p>
+      <h2>Fill the blanks so report.sh writes a tidy report</h2>
+      <div class="codeblock" style="margin-top:.45em;font-size:.55em">#!/bin/bash
+# report.sh - usage: ./report.sh "&lt;your name&gt;"
+
+export OWNER="<span class="fill">____</span>"                 # read the first argument into OWNER
+
+echo "=== Server report ===" <span class="fill">____</span> report.txt   # start the file (overwrite)
+echo "Owner:  $OWNER"        <span class="fill">____</span> report.txt   # append
+echo "Host:   $(hostname)"   &gt;&gt;   report.txt
+echo "When:   $( <span class="fill">____</span> )"     &gt;&gt;   report.txt   # today's date and time
+echo "Uptime: $(uptime -p)"  &gt;&gt;   report.txt
+
+echo "Report saved for $OWNER!"
+cat report.txt | grep <span class="fill">____</span>                     # pull just the Owner line back out</div>
+      <div class="callout" style="margin-top:.65em"><b>Hints:</b> start the file with a single <b>&gt;</b>, then
+      add every later line with <b>&gt;&gt;</b>. <b class="mono">$(command)</b> runs a command and drops its
+      output straight into your text. Create it with <b class="mono">nano report.sh</b>; save with
+      <b class="mono">Ctrl+O</b>, <b class="mono">Enter</b>, <b class="mono">Ctrl+X</b>.</div>
+      <aside class="notes">Set it up verbally: Reem keeps losing track of which server she is logged into, so
+      they write her a script that prints a report — practising variables, $1, redirection and a pipe in one go.
+      Let them struggle for ten minutes before hinting. The single most common bug is using &gt; on every line
+      and ending up with a one-line file — exactly the lesson from the widget, so make them diagnose it
+      themselves.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Milestone 2 · take the wheel of your server</p>
+      <h2>Log in, prove where you are, and run your script there</h2>
+      <div class="two">
+        <div class="steps">
+          <div class="rule"><span class="n">1</span><p><b>Connect</b> from your laptop terminal.</p></div>
+          <div class="rule"><span class="n">2</span><p><b>Prove where you are</b> — the four commands opposite.</p></div>
+          <div class="rule"><span class="n">3</span><p><b>Make a working area</b> you will reuse tomorrow.</p></div>
+          <div class="rule"><span class="n">4</span><p><b>Complete the task</b> — write and run
+          <b class="mono">report.sh</b> right there on the server, not on your laptop.</p></div>
+        </div>
+        <div class="codeblock">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;
+
+pwd
+hostname
+whoami
+cat /etc/os-release | grep PRETTY_NAME
+
+mkdir day1 &amp;&amp; cd day1</div>
+      </div>
+      <div class="callout" style="margin-top:.7em">Stuck? <b class="mono">man chmod</b> and
+      <b class="mono">man grep</b> (press <b class="mono">q</b> to quit). Or ask a teaching assistant during lab
+      hours. 😊</div>
+      <aside class="notes">Presenter: insist the script is written ON the server. Someone will write it locally
+      and wonder why hostname is wrong — that is a teachable moment, let it happen once.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Day 1 · done</p>
+      <h2>You can now control a cloud server from the terminal</h2>
+      <div class="ackbox"><input type="checkbox" aria-label="day 1 complete">
+        <div>You connected over SSH and can move around confidently, and
+        <b class="mono">report.sh</b> runs — building <b class="mono">report.txt</b> with <b>&gt;</b> then
+        <b>&gt;&gt;</b>, injecting <b class="mono">$(date)</b>, and pulling the owner line back out with a
+        pipe.</div></div>
+      <div class="k2 c3" style="margin-top:.9em">
+        <div class="card"><h3>This morning</h3><p>Launched real, reachable infrastructure — a running server with
+        a public address.</p></div>
+        <div class="card"><h3>This afternoon</h3><p>Connected over SSH, navigated and managed files, set
+        permissions, chained commands, and wrote a script.</p></div>
+        <div class="card"><h3>Tomorrow</h3><p>You put your app inside a container and deploy it onto the machine
+        you just built.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.75em">🎮 <b>Kahoot:</b> Day 1 · Session 2 — SSH, navigation,
+      permissions, pipes and redirection, environment variables.</div>
+      <aside class="notes">Presenter: end on the "tomorrow" card so the day closes forward, not backward.
+      Remind them the server stays up all week — nobody deletes anything tonight.</aside>
+    </section>
+
+  </div>
+</div>
+
+<script src="../shared/dist/reveal.js"></script>
+<script src="../shared/plugin/notes/notes.js"></script>
+<script src="js/state.js?v=1"></script>
+</body>
+</html>

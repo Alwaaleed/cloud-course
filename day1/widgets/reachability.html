@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Can the internet reach your server?</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 360px; }
+  .lgd { margin-left: auto; font-size: 12px; color: #42606A; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <button id="play" class="primary">▶ Send a packet</button>
+    <button id="eip" class="on">EIP attached</button>
+    <button id="sg" class="on">Security group: allow 22</button>
+    <span class="lgd" id="lgd"></span>
+  </div>
+  <div class="cap" id="cap">Press <b>Send a packet</b> — then switch the EIP off and send another one.</div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap"), lgd = document.getElementById("lgd");
+  var bEip = document.getElementById("eip"), bSg = document.getElementById("sg");
+  var W = 1000, H = 360, MID = 196;
+
+  var eip = true, sg = true;
+  var pkt = null, raf = null;   // pkt = {x, stopX, verdict}
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = cssW; draw();
+  }
+
+  function P() {
+    return {
+      net:  0.06 * W,
+      eip:  0.285 * W,
+      vsw:  0.40 * W,
+      sg:   0.655 * W,
+      ecs:  0.795 * W,
+      vpcL: 0.20 * W, vpcR: 0.965 * W,
+      vswL: 0.345 * W, vswR: 0.93 * W
+    };
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function label(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left";
+  }
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+  var SANS = "'Avenir Next', 'Segoe UI', system-ui, sans-serif";
+
+  function draw() {
+    var p = P();
+    ctx.clearRect(0, 0, W, H);
+
+    // ---- VPC ---------------------------------------------------------------
+    ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = "#00567C";
+    roundRect(p.vpcL, 66, p.vpcR - p.vpcL, 244, 8); ctx.stroke();
+    ctx.setLineDash([]);
+    label("VPC · your private network", p.vpcL + 14, 82, "700 12px " + MONO, "#00567C");
+
+    // ---- vSwitch -----------------------------------------------------------
+    ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = "#5C7880";
+    roundRect(p.vswL, 104, p.vswR - p.vswL, 176, 6); ctx.stroke();
+    ctx.setLineDash([]);
+    label("vSwitch · a subnet in one zone", p.vswL + 12, 118, "700 11px " + MONO, "#5C7880");
+
+    // ---- the wire ----------------------------------------------------------
+    ctx.strokeStyle = "#CDD8DA"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(p.net + 46, MID); ctx.lineTo(p.ecs - 62, MID); ctx.stroke();
+
+    // ---- internet ----------------------------------------------------------
+    ctx.fillStyle = "#EEF3F3"; ctx.strokeStyle = "#8AA1A8"; ctx.lineWidth = 1.5;
+    roundRect(p.net - 44, MID - 30, 90, 60, 6); ctx.fill(); ctx.stroke();
+    label("INTERNET", p.net + 1, MID, "700 11px " + MONO, "#42606A", "center");
+
+    // ---- EIP gate ----------------------------------------------------------
+    var eipCol = eip ? "#1F8F89" : "#C4CFD2";
+    ctx.fillStyle = eip ? "rgba(31,143,137,.15)" : "#F1F4F4";
+    ctx.strokeStyle = eipCol; ctx.lineWidth = 2;
+    if (!eip) ctx.setLineDash([5, 4]);
+    roundRect(p.eip - 40, MID - 26, 80, 52, 5); ctx.fill(); ctx.stroke();
+    ctx.setLineDash([]);
+    label("EIP", p.eip, MID - 7, "800 15px " + SANS, eip ? "#1F8F89" : "#8AA1A8", "center");
+    label(eip ? "attached" : "none", p.eip, MID + 10, "10px " + MONO, eip ? "#1F8F89" : "#8AA1A8", "center");
+
+    // ---- security group ----------------------------------------------------
+    var sgCol = sg ? "#1F8F89" : "#D64545";
+    ctx.strokeStyle = sgCol; ctx.lineWidth = 2.5;
+    ctx.setLineDash(sg ? [3, 7] : []);
+    ctx.beginPath(); ctx.moveTo(p.sg, 154); ctx.lineTo(p.sg, 240); ctx.stroke();
+    ctx.setLineDash([]);
+    label("SECURITY GROUP", p.sg, 140, "700 10px " + MONO, sgCol, "center");
+    label(sg ? "port 22 open" : "port 22 shut", p.sg, 254, "700 10px " + MONO, sgCol, "center");
+
+    // ---- ECS instance ------------------------------------------------------
+    var win = pkt && pkt.done && pkt.verdict === "in";
+    ctx.fillStyle = win ? "rgba(31,143,137,.16)" : "#FFFFFF";
+    ctx.strokeStyle = win ? "#1F8F89" : "#00567C"; ctx.lineWidth = 2;
+    roundRect(p.ecs - 62, MID - 44, 124, 88, 6); ctx.fill(); ctx.stroke();
+    label("ECS", p.ecs, MID - 22, "800 17px " + SANS, "#00567C", "center");
+    label("instance", p.ecs, MID - 3, "10px " + MONO, "#5C7880", "center");
+    label("Ubuntu 22.04", p.ecs, MID + 14, "10px " + MONO, "#5C7880", "center");
+    label(win ? "● running · reachable" : "● running", p.ecs, MID + 32,
+          "700 10px " + MONO, win ? "#1F8F89" : "#8AA1A8", "center");
+
+    // ---- the packet --------------------------------------------------------
+    if (pkt) {
+      var blocked = pkt.done && pkt.verdict !== "in";
+      ctx.fillStyle = blocked ? "#D64545" : "#00567C";
+      ctx.beginPath(); ctx.arc(pkt.x, MID, 9, 0, Math.PI * 2); ctx.fill();
+      if (!pkt.done) {
+        ctx.fillStyle = "rgba(0,86,125,.18)";
+        ctx.beginPath(); ctx.arc(pkt.x - 15, MID, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(pkt.x - 27, MID, 4, 0, Math.PI * 2); ctx.fill();
+      }
+      if (blocked) {
+        ctx.strokeStyle = "#D64545"; ctx.lineWidth = 3.5; ctx.lineCap = "round";
+        var r = 17;
+        ctx.beginPath();
+        ctx.moveTo(pkt.x - r, MID - r); ctx.lineTo(pkt.x + r, MID + r);
+        ctx.moveTo(pkt.x + r, MID - r); ctx.lineTo(pkt.x - r, MID + r);
+        ctx.stroke();
+      }
+    }
+
+    lgd.textContent = "ssh -i my-key.pem root@" + (eip ? "47.91.x.x" : "<no public IP>");
+  }
+
+  function outcome() {
+    var p = P();
+    if (!eip) return { stopX: p.eip - 60, verdict: "noeip" };
+    if (!sg)  return { stopX: p.sg - 12, verdict: "nosg" };
+    return { stopX: p.ecs, verdict: "in" };
+  }
+
+  var MSG = {
+    noeip: "<span class='dngr'>Dropped.</span> With no Elastic IP there is no public address to aim at — the packet never even enters your VPC. Your server is running perfectly and is <b>completely invisible from the internet</b>. This is why Milestone 1 says <em>Running + a public IP = success</em>.",
+    nosg:  "<span class='dngr'>Blocked at the security group.</span> The EIP carried the packet all the way into your VPC — then the firewall refused port 22. The address was never the problem. <em>You will open exactly these rules on Day 3.</em>",
+    in:    "<span class='good'>Connected.</span> Public address → into the VPC → through the security group → into the instance. Your prompt changes to <b>root@iZ…:~#</b> and the server is now the thing you are talking to."
+  };
+
+  function play() {
+    var o = outcome(), p = P();
+    pkt = { x: p.net + 46, stopX: o.stopX, verdict: o.verdict, done: false };
+    cap.innerHTML = "…";
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(step);
+  }
+  function step() {
+    if (!pkt) return;
+    pkt.x += Math.max(2.2, (pkt.stopX - pkt.x) * 0.055);
+    if (pkt.x >= pkt.stopX - 0.6) {
+      pkt.x = pkt.stopX; pkt.done = true;
+      draw(); cap.innerHTML = MSG[pkt.verdict]; raf = null; return;
+    }
+    draw();
+    raf = requestAnimationFrame(step);
+  }
+
+  document.getElementById("play").addEventListener("click", play);
+  bEip.addEventListener("click", function () {
+    eip = !eip; this.classList.toggle("on", eip);
+    this.textContent = eip ? "EIP attached" : "EIP removed";
+    pkt = null; draw();
+    cap.innerHTML = "Now press <b>Send a packet</b> and watch where it gets to.";
+  });
+  bSg.addEventListener("click", function () {
+    sg = !sg; this.classList.toggle("on", sg);
+    this.textContent = sg ? "Security group: allow 22" : "Security group: deny 22";
+    pkt = null; draw();
+    cap.innerHTML = "Now press <b>Send a packet</b> and watch where it gets to.";
+  });
+
+  window.addEventListener("resize", fit);
+  fit();
+
+  // screenshot hook: ?eip=0&sg=0&play=1 renders a specific outcome
+  var q = location.search;
+  if (/eip=0/.test(q)) { eip = false; bEip.classList.remove("on"); bEip.textContent = "EIP removed"; }
+  if (/sg=0/.test(q))  { sg = false;  bSg.classList.remove("on");  bSg.textContent = "Security group: deny 22"; }
+  draw();
+  if (/play=1/.test(q)) {
+    var o = outcome(); pkt = { x: o.stopX, stopX: o.stopX, verdict: o.verdict, done: true };
+    draw(); cap.innerHTML = MSG[o.verdict];
+  }
+})();
+</script>
+</body>
+</html>

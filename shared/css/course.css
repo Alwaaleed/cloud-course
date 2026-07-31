@@ -1,0 +1,187 @@
+/* ==========================================================================
+   Majal — course deck theme.  Palette sampled from the Majal educational deck
+   template PDF (light identity):
+     Petrol  #00567d · Teal-green #1f8f89 · Turquoise #33d2cb ·
+     Yellow  #f2d200 · Ink #12333d · Slate #2f4f59 · Muted #5c7880 ·
+     Page bg #f6f8f8 / #eef3f3 · Borders #e0e7e8 · Cards #ffffff
+   Fonts: Avenir (English) / IBM Plex Sans Arabic — with offline-safe fallbacks.
+   No @import, no external fonts, no CDN — this must run from file://.
+
+   Design signatures carried over from the PDF:
+     · teal-green uppercase kicker as the eyebrow label
+     · petrol headings with a short yellow underline bar
+     · white cards on a soft off-white page, hairline borders
+     · turquoise + yellow used as fills / bars, never as text on light
+     · terminal & code surfaces stay dark petrol (echoes the deck's dark slide)
+
+   THIS FILE IS THE BRAND KERNEL — it is identical across every Majal course
+   (cyber, AI, robotics, data, …).  Do NOT put topic-specific widget CSS here.
+   That belongs in the day's own <style> block or its widget file.
+   ========================================================================== */
+:root {
+  /* brand roles */
+  --petrol:  #00567d;   /* primary — headings, links, controls */
+  --petrol-d:#003f5e;
+  --teal:    #1f8f89;   /* kicker / label green-teal */
+  --turq:    #33d2cb;   /* bright accent block */
+  --turq-d:  #17b3ab;
+
+  --navy:    #00567d;
+  --navy-2:  #063f57;
+  --navy-3:  #04303f;
+  --gray:    #cfe0e3;   /* light mono text on dark code panels */
+  --yellow:  #f2d200;
+  --bg:      #f6f8f8;     /* soft off-white page */
+  --bg-2:    #eef3f3;
+  --panel:   #ffffff;     /* cards */
+  --panel-2: #eef3f3;     /* subtle inset panel */
+  --ink:     #12333d;     /* default text */
+  --slate:   #2f4f59;
+  --muted:   #5c7880;
+  --good:    #1f8f89;
+  --bad:     #d64545;
+  --line:    #e0e7e8;
+  --line-2:  rgba(18,51,61,.10);
+  --code-bg: #04303f;     /* dark petrol terminal surface */
+  --code-line: rgba(159,201,207,.20);
+  --code-ink: #9fc9cf;
+  --sans: "Avenir Next", "Avenir", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --ar:   "IBM Plex Sans Arabic", "Noto Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Code", "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+}
+
+/* ---- reveal base overrides --------------------------------------------- */
+.reveal { font-family: var(--sans); font-size: 30px; color: var(--ink); }
+/* Flat off-white page, exactly like the PDF — no soft "AI glow" gradients.
+   The one brand flourish is the Majal square-block motif sitting quietly in
+   the bottom-right corner, echoing the deck template's cover slide. */
+.reveal-viewport { background: var(--bg); }
+.reveal-viewport::after {
+  content: ""; position: fixed; right: 0; bottom: 0; width: 120px; height: 120px;
+  z-index: 0; pointer-events: none; opacity: .5;
+  background:
+    linear-gradient(var(--turq), var(--turq)) 0 0 / 50px 50px no-repeat,
+    linear-gradient(var(--yellow), var(--yellow)) 56px 0 / 36px 50px no-repeat,
+    linear-gradient(var(--petrol), var(--petrol)) 0 56px / 50px 36px no-repeat;
+}
+.reveal .slides { text-align: left; }
+.reveal section { top: 0 !important; }
+/* header safe-zone so fixed brand chrome never collides with slide content;
+   overflow-y auto is a safety net so a dense slide can always be scrolled
+   inside its own 720px box rather than clipping. */
+.reveal .slides > section {
+  padding: 58px 48px 34px; box-sizing: border-box;
+  height: 720px; overflow-y: auto; overflow-x: hidden;
+  scrollbar-color: var(--petrol) transparent;
+}
+.reveal .slides > section::-webkit-scrollbar { width: 8px; }
+.reveal .slides > section::-webkit-scrollbar-thumb { background: var(--petrol); border-radius: 3px; }
+.reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: var(--sans); color: var(--petrol);
+  font-weight: 800; letter-spacing: -.01em; text-transform: none; line-height: 1.08; }
+.reveal h1 { font-size: 1.9em; }
+.reveal h2 { font-size: 1.4em; position: relative; padding-bottom: .3em; margin-bottom: .55em; }
+/* short yellow underline bar under the main slide title, as in the PDF */
+.reveal h1::after, .reveal h2::after { content: ""; position: absolute; left: 0; bottom: 0;
+  width: 64px; height: 5px; border-radius: 3px; background: var(--yellow); }
+.reveal h3 { font-size: 1.05em; }
+.reveal p, .reveal li { line-height: 1.4; }
+.reveal a { color: var(--petrol); }
+.reveal strong { color: var(--petrol); }
+.reveal em { color: var(--teal); font-style: normal; font-weight: 600; }
+.reveal ::selection { background: var(--petrol); color: #fff; }
+.reveal .controls { color: var(--petrol); }
+.reveal .progress { color: var(--petrol); height: 4px; }
+.reveal .progress span { background: linear-gradient(90deg, var(--turq), var(--petrol)); }
+
+/* page number, bottom-LEFT so it never collides with the corner square motif;
+   styled like the PDF footer folio — muted mono, no pill. */
+.reveal .slide-number { left: 12px; right: auto; bottom: 10px; background: transparent;
+  color: var(--muted); font-family: var(--mono); font-size: 13px; letter-spacing: .1em; }
+
+/* ---- shared helpers ----------------------------------------------------- */
+.kicker { font-family: var(--sans); font-size: .5em; font-weight: 800; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--teal); margin: 0 0 .5em; }
+.sub { color: var(--muted); font-size: .8em; }
+.mono { font-family: var(--mono); }
+.tiny { font-size: .62em; }
+.center { text-align: center; }
+/* pills read as small square-cut tags, echoing the brand's square blocks —
+   not the rounded lozenges of a generic UI kit. */
+.pill { display: inline-block; padding: .16em .7em; border-radius: 2px;
+  font-family: var(--mono); font-size: .55em; letter-spacing: .14em; text-transform: uppercase; }
+.pill.c { background: rgba(0,86,125,.12); color: var(--petrol); border-left: 3px solid var(--turq); }
+.pill.i { background: rgba(242,210,0,.20); color: var(--ink); border-left: 3px solid var(--yellow); }
+.pill.a { background: rgba(31,143,137,.14); color: var(--good); border-left: 3px solid var(--teal); }
+.danger { color: var(--bad); font-weight: 700; }
+.good-t { color: var(--good); font-weight: 700; }
+
+/* PDF card: white panel, sharp corners, a solid colour rule across the whole
+   top edge, and the faintest lift — flat and editorial, no soft glow. */
+.card { background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--turq);
+  border-radius: 2px; padding: 1em 1.1em; box-shadow: 0 1px 2px rgba(18,51,61,.04); }
+.callout { border-left: 4px solid var(--petrol); background: var(--panel-2);
+  padding: .7em 1em; border-radius: 0 2px 2px 0; font-size: .8em; }
+.callout.hot { border-left-color: var(--yellow); background: rgba(242,210,0,.08); }
+
+button.btn { font-family: var(--sans); font-weight: 700; font-size: .7em;
+  background: var(--petrol); color: #fff; border: 0; border-radius: 3px;
+  padding: .55em 1.1em; cursor: pointer; transition: transform .08s, background .15s; }
+button.btn:hover { background: var(--petrol-d); }
+button.btn:active { transform: translateY(1px); }
+button.btn.ghost { background: transparent; color: var(--petrol); border: 1px solid var(--petrol); }
+button.btn.ghost:hover { background: rgba(0,86,125,.08); }
+button.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+input[type=text], textarea, .field {
+  font-family: var(--mono); font-size: .7em; color: var(--ink);
+  background: #ffffff; border: 1px solid var(--line); border-radius: 3px;
+  padding: .5em .7em; outline: none; }
+input[type=text]:focus, textarea:focus { border-color: var(--petrol); }
+textarea { width: 100%; resize: vertical; line-height: 1.4; }
+
+/* segmented control — tabs inside a slide */
+.seg { font-family: var(--sans); font-weight: 700; font-size: .62em; padding: .5em 1em; border-radius: 4px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
+.seg.on { background: var(--petrol); color: #fff; border-color: var(--petrol); }
+
+/* ---- persistent brand chrome (logo + day flag on every slide) ----------- */
+.brandmark { position: fixed; top: 22px; left: 26px; z-index: 40;
+  display: flex; align-items: center; gap: 12px; opacity: .95; pointer-events: none; }
+.brandmark .logo { height: 40px; width: auto; mix-blend-mode: multiply; }
+.dayflag { position: fixed; top: 24px; right: 28px; z-index: 40; font-family: var(--mono);
+  font-size: 11px; letter-spacing: .18em; color: var(--muted); pointer-events: none; }
+
+/* ---- week / schedule table ---------------------------------------------- */
+table.week { border-collapse: collapse; width: 100%; font-size: .74em; }
+table.week th, table.week td { text-align: left; padding: .55em .7em; border-bottom: 1px solid var(--line); }
+table.week th { color: var(--teal); font-family: var(--mono); font-size: .8em;
+  text-transform: uppercase; letter-spacing: .1em; }
+table.week td:first-child { font-family: var(--mono); color: var(--petrol); font-weight: 700; width: 60px; }
+table.week tr.today td { background: rgba(0,86,125,.08); }
+
+/* ---- numbered ground rules ---------------------------------------------- */
+.rule { display: flex; gap: 14px; margin: .7em 0; font-size: .8em; align-items: flex-start; }
+/* filled petrol square with a white numeral — the PDF's numbered-list mark */
+.rule .n { flex: 0 0 auto; width: 1.7em; height: 1.7em; display: inline-flex;
+  align-items: center; justify-content: center; font-family: var(--sans); font-weight: 800;
+  color: #fff; background: var(--petrol); border-radius: 2px; font-size: .95em; }
+.ackbox { margin-top: 1em; padding: 1em; border: 1px solid var(--yellow); border-radius: 4px;
+  background: rgba(242,210,0,.10); font-size: .72em; display: flex; gap: 12px; align-items: flex-start; }
+.ackbox input { width: 22px; height: 22px; accent-color: var(--petrol); margin-top: 2px; cursor: pointer; }
+
+/* ---- dark code / terminal surface --------------------------------------- */
+.codeblock { font-family: var(--mono); font-size: .66em; background: var(--code-bg);
+  border: 1px solid var(--code-line); border-left: 4px solid var(--turq); border-radius: 4px;
+  padding: .8em 1em; color: var(--code-ink); white-space: pre-wrap; line-height: 1.6; }
+
+/* ---- facilitator / presenter box ---------------------------------------- */
+.facilitator { margin-top: 1em; border: 1px solid var(--yellow); background: rgba(242,210,0,.10);
+  border-radius: 4px; padding: .9em 1.1em; font-size: .74em; }
+.facilitator .lbl { font-family: var(--mono); font-size: .8em; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--teal); }
+
+/* fragment helper: keep layout stable */
+.reveal .fragment.fade-in-then-out.visible { opacity: 1; }
+
+/* ---- iframe-hosted interactive widgets ---------------------------------- */
+.reveal .wframe { width: 100%; height: 470px; border: 0; display: block; margin-top: 4px; background: transparent; }

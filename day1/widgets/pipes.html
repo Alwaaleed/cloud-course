@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pipes and redirection — watch the data move</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 372px; }
+  .grp { display: none; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .grp.show { display: flex; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+  .hint { margin-left: auto; font-size: 12px; color: #8AA1A8; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <button id="mPipe" class="on">Pipe&nbsp;&nbsp;|</button>
+    <button id="mRedir">Redirect&nbsp;&nbsp;&gt;&nbsp;&gt;&gt;</button>
+    <span class="sep"></span>
+
+    <span class="grp show" id="gPipe">
+      <button data-pat="root" class="on">grep root</button>
+      <button data-pat="bash">grep bash</button>
+      <button data-pat="nologin">grep nologin</button>
+      <button id="wc">| wc -l</button>
+    </span>
+
+    <span class="grp" id="gRedir">
+      <button id="wr">echo … &gt; report.txt</button>
+      <button id="ap" class="primary">echo … &gt;&gt; report.txt</button>
+      <button id="rs">reset</button>
+    </span>
+    <span class="hint" id="hint"></span>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap"), hint = document.getElementById("hint");
+  var W = 1000, H = 372;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+
+  var PASSWD = [
+    "root:x:0:0:root:/root:/bin/bash",
+    "daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin",
+    "bin:x:2:2:bin:/bin:/usr/sbin/nologin",
+    "sys:x:3:3:sys:/dev:/usr/sbin/nologin",
+    "sshd:x:105:65534::/run/sshd:/usr/sbin/nologin",
+    "ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash",
+    "nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin"
+  ];
+
+  var mode = "pipe", pat = "root", useWc = false;
+  var rows = [], raf = null, settled = false;
+
+  // redirect mode state
+  var fileLines = [], writeCount = 0;
+  var LINES = ["=== Server report ===", "Owner:  Reem", "Host:   iZ8psb1rk", "When:   Fri Jul 31 20:41", "Uptime: up 2 hours"];
+
+  var PAD = 18;
+  function gateX() { return 0.47 * W; }
+  function outX()  { return 0.56 * W; }
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+
+  // ================= PIPE MODE ==============================================
+  function runPipe() {
+    rows = PASSWD.map(function (t, i) {
+      return { text: t, ok: t.indexOf(pat) !== -1, x: PAD, y: 96 + i * 30, alpha: 1, drop: 0 };
+    });
+    settled = false;
+    if (raf) cancelAnimationFrame(raf);
+    if (/settle=1/.test(location.search)) {   // screenshot hook: jump to the end state
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].ok) rows[i].x = outX();
+        else { rows[i].x = gateX(); rows[i].alpha = 0; }
+      }
+      settled = true; draw(); captionPipe(); return;
+    }
+    raf = requestAnimationFrame(stepPipe);
+    cap.innerHTML = "…";
+  }
+  function stepPipe() {
+    var done = true, g = gateX(), o = outX();
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r.ok) {
+        if (r.x < o) { r.x += Math.max(3, (o - r.x) * 0.09); done = false; }
+        else r.x = o;
+      } else {
+        if (r.x < g) { r.x += Math.max(3, (g - r.x) * 0.09); done = false; }
+        else if (r.alpha > 0.02) { r.alpha -= 0.06; r.drop += 2.4; done = false; }
+        else { r.alpha = 0; }
+      }
+    }
+    draw();
+    if (!done) { raf = requestAnimationFrame(stepPipe); }
+    else { raf = null; settled = true; draw(); captionPipe(); }
+  }
+  function survivors() { return rows.filter(function (r) { return r.ok; }); }
+
+  function captionPipe() {
+    var n = survivors().length;
+    if (useWc) {
+      cap.innerHTML = "<b>wc -l</b> does not care what the lines <em>say</em> — it counts what reaches it. " +
+        "Seven lines went in, <b>" + n + "</b> got through <b>grep " + pat + "</b>, so the answer is <b>" + n + "</b>. " +
+        "Each stage only ever sees the output of the one before it.";
+    } else {
+      cap.innerHTML = "<b>grep " + pat + "</b> let <b>" + n + " of 7</b> lines through. " +
+        "The pipe <b>|</b> is plumbing: <em>cat</em> never knew grep existed — it just wrote lines, and the shell " +
+        "handed them straight to the next command instead of to your screen.";
+    }
+  }
+
+  function drawPipe() {
+    var g = gateX(), o = outX();
+    var cmd = "cat /etc/passwd | grep " + pat + (useWc ? " | wc -l" : "");
+    txt("$ " + cmd, PAD, 26, "700 15px " + MONO, "#00567C");
+
+    txt("7 lines in", PAD, 62, "11px " + MONO, "#8AA1A8");
+    var nOut = survivors().length;
+    txt(useWc ? "one number out" : nOut + (nOut === 1 ? " line out" : " lines out"),
+        o, 62, "11px " + MONO, "#8AA1A8");
+
+    // the gate
+    ctx.strokeStyle = "#F2D200"; ctx.lineWidth = 3; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(g, 82); ctx.lineTo(g, H - 24); ctx.stroke();
+    ctx.setLineDash([]);
+    txt("grep " + pat, g, 70, "700 11px " + MONO, "#A08800", "center");
+
+    // the input file stays on screen the whole time — the point of the widget is
+    // seeing 7 go in and N come out, which is lost if the left column empties
+    for (var s = 0; s < PASSWD.length; s++) {
+      ctx.globalAlpha = 0.16;   // faint enough that the travelling copies stay legible on top
+      txt(PASSWD[s], PAD, 96 + s * 30, "11px " + MONO, "#12333D");
+      ctx.globalAlpha = 1;
+    }
+
+    if (useWc && settled) {
+      // collapsed into a count
+      var n = survivors().length;
+      ctx.fillStyle = "rgba(31,143,137,.12)"; ctx.strokeStyle = "#1F8F89"; ctx.lineWidth = 2;
+      roundRect(o, 150, 120, 90, 6); ctx.fill(); ctx.stroke();
+      txt("" + n, o + 60, 195, "800 44px " + MONO, "#1F8F89", "center");
+      // ghosts of the survivors feeding it
+      for (var k = 0; k < survivors().length; k++) {
+        var rr = survivors()[k];
+        ctx.globalAlpha = 0.25;
+        txt(rr.text, rr.x, rr.y, "11px " + MONO, "#1F8F89");
+        ctx.globalAlpha = 1;
+      }
+      return;
+    }
+
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r.alpha <= 0) continue;
+      ctx.globalAlpha = r.alpha;
+      // a line only turns red once the gate has actually rejected it —
+      // colouring it early would give the answer away before grep runs
+      var passed = r.ok && r.x >= o - 1;
+      var rejected = !r.ok && r.x >= g - 1;
+      txt(r.text, r.x, r.y + r.drop, "11px " + MONO,
+          rejected ? "#D64545" : (passed ? "#1F8F89" : "#12333D"));
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ================= REDIRECT MODE ==========================================
+  function drawRedir() {
+    var cmd = writeCount === 0 ? 'echo "…" > report.txt' : 'echo "…" >> report.txt';
+    txt("$ " + cmd, PAD, 26, "700 15px " + MONO, "#00567C");
+
+    var bx = PAD, bw = W - PAD * 2, by = 58, bh = H - by - 20;
+    ctx.fillStyle = "#FFFFFF"; ctx.strokeStyle = "#CDD8DA"; ctx.lineWidth = 1.5;
+    roundRect(bx, by, bw, bh, 6); ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = "#EEF3F3";
+    roundRect(bx, by, bw, 30, 6); ctx.fill();
+    txt("report.txt", bx + 14, by + 15, "700 12px " + MONO, "#42606A");
+    txt(fileLines.length + (fileLines.length === 1 ? " line" : " lines"),
+        bx + bw - 14, by + 15, "11px " + MONO, "#8AA1A8", "right");
+
+    if (!fileLines.length) {
+      txt("(empty)", bx + 18, by + 62, "13px " + MONO, "#BCC9CC");
+    }
+    for (var i = 0; i < fileLines.length; i++) {
+      var f = fileLines[i];
+      ctx.globalAlpha = f.alpha;
+      txt(f.text, bx + 18 + f.slide, by + 58 + i * 30, "700 14px " + MONO,
+          f.dying ? "#D64545" : "#12333D");
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function stepRedir() {
+    var busy = false;
+    for (var i = fileLines.length - 1; i >= 0; i--) {
+      var f = fileLines[i];
+      if (f.dying) { f.alpha -= 0.07; busy = true; if (f.alpha <= 0) fileLines.splice(i, 1); }
+      else if (f.slide > 0) { f.slide *= 0.82; if (f.slide < 0.5) f.slide = 0; else busy = true; }
+      else if (f.alpha < 1) { f.alpha += 0.12; if (f.alpha > 1) f.alpha = 1; else busy = true; }
+    }
+    draw();
+    if (busy) raf = requestAnimationFrame(stepRedir); else raf = null;
+  }
+  function pushLine(append) {
+    var next = LINES[writeCount % LINES.length];
+    if (!append) {
+      for (var i = 0; i < fileLines.length; i++) fileLines[i].dying = true;
+      setTimeout(function () {
+        fileLines = fileLines.filter(function (f) { return !f.dying; });
+        fileLines.push({ text: next, alpha: 0, slide: 26, dying: false });
+        if (!raf) raf = requestAnimationFrame(stepRedir);
+      }, 260);
+      cap.innerHTML = "<span class='dngr'>&gt; clobbers.</span> Every line that was already in the file is gone — " +
+        "not appended to, <b>overwritten</b>. Run your script twice with <b>&gt;</b> on every line and you keep only the last one.";
+    } else {
+      fileLines.push({ text: next, alpha: 0, slide: 26, dying: false });
+      cap.innerHTML = "<span class='good'>&gt;&gt; appends.</span> The new line lands at the end and everything above it survives. " +
+        "This is why <b>report.sh</b> opens the file with a single <b>&gt;</b> and then uses <b>&gt;&gt;</b> for every line after it.";
+    }
+    writeCount++;
+    if (!raf) raf = requestAnimationFrame(stepRedir);
+  }
+
+  // ================= shared =================================================
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    if (mode === "pipe") drawPipe(); else drawRedir();
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("mPipe").classList.toggle("on", m === "pipe");
+    document.getElementById("mRedir").classList.toggle("on", m === "redir");
+    document.getElementById("gPipe").classList.toggle("show", m === "pipe");
+    document.getElementById("gRedir").classList.toggle("show", m === "redir");
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    if (m === "pipe") { hint.textContent = "change the pattern and watch a different set survive"; runPipe(); }
+    else {
+      hint.textContent = "press >> a few times, then press > once";
+      fileLines = []; writeCount = 0;
+      fileLines.push({ text: LINES[0], alpha: 1, slide: 0, dying: false }); writeCount = 1;
+      cap.innerHTML = "The file has one line. Press <b>&gt;&gt;</b> to add more, then press <b>&gt;</b> once and watch what happens to them.";
+      draw();
+    }
+  }
+
+  document.getElementById("mPipe").addEventListener("click", function () { setMode("pipe"); });
+  document.getElementById("mRedir").addEventListener("click", function () { setMode("redir"); });
+  document.getElementById("wr").addEventListener("click", function () { pushLine(false); });
+  document.getElementById("ap").addEventListener("click", function () { pushLine(true); });
+  document.getElementById("rs").addEventListener("click", function () { setMode("redir"); });
+  document.getElementById("wc").addEventListener("click", function () {
+    useWc = !useWc; this.classList.toggle("on", useWc); runPipe();
+  });
+  var pb = document.querySelectorAll("button[data-pat]");
+  for (var i = 0; i < pb.length; i++) {
+    pb[i].addEventListener("click", function () {
+      pat = this.dataset.pat;
+      for (var k = 0; k < pb.length; k++) pb[k].classList.toggle("on", pb[k] === this);
+      runPipe();
+    });
+  }
+
+  window.addEventListener("resize", fit);
+  hint.textContent = "change the pattern and watch a different set survive";
+  fit();
+  if (/mode=redir/.test(location.search)) setMode("redir"); else runPipe();
+})();
+</script>
+</body>
+</html>

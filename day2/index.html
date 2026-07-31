@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Majal — Cloud Computing Day 2: Day 2 title</title>
+  <link rel="stylesheet" href="../shared/dist/reset.css">
+  <link rel="stylesheet" href="../shared/dist/reveal.css">
+  <link rel="stylesheet" href="../shared/css/course.css?v=1">
+  <style>
+    /* ---- day-specific slide layouts live here, NOT in course.css --------
+       Build them out of the brand kernel's .card / .callout / var(--petrol)
+       so a new grid still reads as the same deck.  Common ones: */
+
+    /* card grid — the workhorse concept slide */
+    .k2 { display: grid; gap: 14px; margin-top: .3em; }
+    .k2.c2 { grid-template-columns: 1fr 1fr; }
+    .k2.c3 { grid-template-columns: repeat(3,1fr); }
+    .k2.c4 { grid-template-columns: repeat(4,1fr); }
+    .k2 .card h3 { margin: 0 0 .3em; font-size: .82em; color: var(--petrol); letter-spacing: -.01em; }
+    .k2 .card h3 .tag { font-family: var(--mono); font-size: .58em; font-weight: 700; color: var(--muted);
+      letter-spacing: .05em; text-transform: uppercase; margin-left: .4em; }
+    .k2 .card p { margin: 0; font-size: .64em; color: var(--muted); line-height: 1.42; }
+    .k2 .card .ex { display: block; margin-top: .55em; font-size: .6em; color: var(--slate);
+      border-top: 1px dashed var(--line); padding-top: .45em; }
+    .k2 .card .ex b { color: var(--petrol); font-weight: 700; }
+
+    /* pipeline / stage strip — a process with N stages, side by side */
+    .pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: .55em;
+      border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+    .pipe .stg { padding: .75em .85em; border-right: 1px solid var(--line); background: var(--panel); }
+    .pipe .stg:last-child { border-right: 0; }
+    .pipe .stg .num { font-family: var(--mono); font-size: .5em; font-weight: 800; letter-spacing: .16em;
+      color: var(--turq); text-transform: uppercase; }
+    .pipe .stg h3 { margin: .12em 0 .3em; font-size: .74em; color: var(--petrol); }
+    .pipe .stg .q { font-size: .56em; color: var(--muted); line-height: 1.38; min-height: 3.4em; }
+    .pipe .stg .tools { margin-top: .5em; border-top: 1px dashed var(--line); padding-top: .45em;
+      display: flex; flex-wrap: wrap; gap: .28em; }
+    .pipe .stg .tools span { font-family: var(--mono); font-size: .5em; font-weight: 700; letter-spacing: .04em;
+      background: rgba(0,86,125,.09); color: var(--petrol); border-radius: 999px; padding: .28em .65em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ================= TITLE ================= -->
+    <section>
+      <p class="kicker">Day 2 · Day 2 title</p>
+      <h1>A sentence that states<br>today's real question.</h1>
+      <p class="sub" style="margin-top:1.2em;max-width:27em">Two or three lines that name what changes for the
+      learner today and what they will be able to do by the end. Not an agenda — a promise.</p>
+      <aside class="notes">Presenter: how to open, what to land in the first two minutes, what NOT to let this
+      become.</aside>
+    </section>
+
+    <!-- ================= FOUNDATIONS ================= -->
+    <!-- A BLOCK of slides, not a token on-ramp. List what the rest of the day
+         silently assumes, then teach each load-bearing piece. -->
+    <section>
+      <p class="kicker">Foundations · the substrate</p>
+      <h2>The model everything today rests on</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>Piece one <span class="tag">term</span></h3>
+          <p>What it is, in the learner's language.</p>
+          <span class="ex">Concretely: <b>a worked example</b>.</span></div>
+        <div class="card"><h3>Piece two <span class="tag">term</span></h3><p>…</p></div>
+        <div class="card"><h3>Piece three <span class="tag">term</span></h3><p>…</p></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">The one sentence you want them to carry forward.</div>
+      <aside class="notes">Presenter notes.</aside>
+    </section>
+
+    <!-- ================= INTERACTIVE ================= -->
+    <section>
+      <p class="kicker">Section · one-line context</p>
+      <h2>A single-line title that names the mechanism</h2>
+      <iframe class="wframe" style="height:566px"
+              src="widgets/my_widget.html?v=1"
+              title="What it is" scrolling="auto"></iframe>
+      <aside class="notes">Presenter: what to click, in what order, and what the room should conclude.</aside>
+    </section>
+
+  </div>
+</div>
+
+<script src="../shared/dist/reveal.js"></script>
+<script src="../shared/plugin/notes/notes.js"></script>
+<script src="js/state.js?v=1"></script>
+</body>
+</html>
