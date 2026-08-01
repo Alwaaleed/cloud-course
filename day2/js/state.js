@@ -37,11 +37,12 @@ MAJAL._runSlide = function (section) {
 
 /* ---- persistent brand chrome (logo lockup + day flag) ------------------- */
 MAJAL.logoIMG = function () {
-  return '<img class="logo" src="../MajalLogo.jpg" alt="Majal — Unlocking your tech horizons">';
+  return '<img class="logo" src="../MajalLogo.jpg" alt="Majal — Unlocking your tech horizons">' +
+         '<a class="backlink" href="../index.html" title="Back to the course">&#8592; Course</a>';
 };
 MAJAL.mountChrome = function () {
   var b = MAJAL.el("div", { class: "brandmark", html: MAJAL.logoIMG() });
-  var d = MAJAL.el("div", { class: "dayflag", text: "DAY 2 · DAY 2 TITLE" });
+  var d = MAJAL.el("div", { class: "dayflag", text: "DAY 2 · THE FIRST DEPLOY" });
   document.body.appendChild(b);
   document.body.appendChild(d);
 };

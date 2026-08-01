@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>-p host:container — send a request and watch where it lands</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 344px; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+  .hint { margin-left: auto; font-size: 12px; color: #8AA1A8; }
+  .lab { font-size: 12px; color: #42606A; font-weight: 700; }
+  button.sm { padding: 6px 11px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <span class="lab">-p</span>
+    <span id="gHost">
+      <button class="sm on" data-h="8080">8080</button><!--
+   --><button class="sm" data-h="80">80</button>
+    </span>
+    <span class="lab" style="font-size:15px">:</span>
+    <span id="gCont">
+      <button class="sm on" data-c="80">80</button><!--
+   --><button class="sm" data-c="8080">8080</button>
+    </span>
+    <span class="sep"></span>
+    <button id="pub" class="on sm">published</button>
+    <span class="sep"></span>
+    <button id="send" class="primary">▶ Send a request</button>
+    <span class="hint" id="hint">now try flipping it to -p 80:8080</span>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap"), hint = document.getElementById("hint");
+  var W = 1000, H = 344;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+
+  var IP = "47.253.1.100";
+  var LISTEN = 80;                 /* nginx inside the image listens on 80. Fact. */
+  var hostP = 8080, contP = 80, published = true;
+
+  var pkt = null, raf = null;      /* {x, y, state} */
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  function box(x, y, w, h, fill, stroke, r) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+    roundRect(x, y, w, h, r === undefined ? 8 : r); ctx.fill(); ctx.stroke();
+  }
+
+  /* geometry */
+  function hostX()  { return W * 0.40; }     /* the server's edge (host side)    */
+  function contX()  { return W * 0.62; }     /* the container wall               */
+  var LANE = 150;                             /* y of the request lane           */
+
+  /* Does the packet get in, and does anything answer? Two separate gates — that
+     separation IS the lesson. */
+  function verdict() {
+    if (!published) return "unpublished";
+    if (hostP !== reqPort()) return "unpublished";
+    return contP === LISTEN ? "ok" : "nolisten";
+  }
+  function reqPort() { return hostP; }        /* we always knock on the mapped host port */
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    var flag = "$ docker run -d " + (published ? "-p " + hostP + ":" + contP + " " : "") + "nginx";
+    txt(flag, 18, 24, "700 14px " + MONO, "#00567C");
+
+    /* --- the server (petrol = the provider's side of the boundary) --- */
+    var sx = hostX(), sw = W - sx - 18, sy = 52, sh = H - sy - 20;
+    box(sx, sy, sw, sh, "rgba(0,86,124,.05)", "#00567C");
+    txt("YOUR SERVER  " + IP, sx + 12, sy + 16, "700 11px " + MONO, "#00567C");
+
+    /* --- the container inside it --- */
+    var cx = contX(), cw = W - cx - 34, cy = sy + 34, ch = sh - 52;
+    box(cx, cy, cw, ch, "rgba(31,143,137,.08)", "#1F8F89");
+    txt("CONTAINER", cx + 12, cy + 16, "700 11px " + MONO, "#1F8F89");
+    /* kept well below the lane so the port label on the wall never lands on it */
+    txt("nginx", cx + 12, LANE + 62, "700 15px " + MONO, "#12333D");
+    txt("listening on :" + LISTEN, cx + 12, LANE + 82, "12px " + MONO, "#42606A");
+    txt("(the image decides this —", cx + 12, LANE + 112, "11px " + MONO, "#8AA1A8");
+    txt(" you do not get a vote)", cx + 12, LANE + 128, "11px " + MONO, "#8AA1A8");
+
+    /* the container's open port, drawn on its wall */
+    var portY = LANE;
+    box(cx - 7, portY - 13, 14, 26, contP === LISTEN ? "#1F8F89" : "#D64545",
+        contP === LISTEN ? "#1F8F89" : "#D64545", 3);
+    txt(":" + contP, cx + 22, portY - 26, "700 12px " + MONO,
+        contP === LISTEN ? "#1F8F89" : "#D64545");
+
+    /* --- the host port on the server edge --- */
+    box(sx - 7, portY - 13, 14, 26, published ? "#00567C" : "#CDD8DA",
+        published ? "#00567C" : "#CDD8DA", 3);
+    txt(published ? ":" + hostP : "closed", sx - 14, portY - 26,
+        "700 12px " + MONO, published ? "#00567C" : "#8AA1A8", "right");
+
+    /* --- the mapping itself: the pipe through the boundary --- */
+    if (published) {
+      ctx.strokeStyle = "#F2D200"; ctx.lineWidth = 10; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(sx + 8, portY); ctx.lineTo(cx - 8, portY); ctx.stroke();
+      ctx.lineCap = "butt";
+      txt("-p " + hostP + ":" + contP, (sx + cx) / 2, portY + 30, "700 12px " + MONO, "#A08800", "center");
+      txt("host", sx + 16, portY + 30, "10px " + MONO, "#8AA1A8");
+      txt("container", cx - 16, portY + 30, "10px " + MONO, "#8AA1A8", "right");
+    } else {
+      ctx.strokeStyle = "#CDD8DA"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(sx + 8, portY); ctx.lineTo(cx - 8, portY); ctx.stroke();
+      ctx.setLineDash([]);
+      txt("no -p — nothing published", (sx + cx) / 2, portY + 30, "700 11px " + MONO, "#8AA1A8", "center");
+    }
+
+    /* --- the client --- */
+    box(18, LANE - 40, 150, 80, "rgba(31,143,137,.10)", "#1F8F89");
+    txt("YOU", 30, LANE - 22, "700 11px " + MONO, "#1F8F89");
+    txt("curl", 30, LANE - 2, "700 13px " + MONO, "#12333D");
+    txt(":" + reqPort(), 30, LANE + 18, "700 13px " + MONO, "#00567C");
+
+    /* --- the packet --- */
+    if (pkt) {
+      var col = pkt.state === "dead" ? "#D64545" : (pkt.state === "ok" ? "#1F8F89" : "#00567C");
+      ctx.globalAlpha = pkt.alpha;
+      box(pkt.x - 26, pkt.y - 11, 52, 22, col, col, 4);
+      txt("GET /", pkt.x, pkt.y, "700 10px " + MONO, "#FFFFFF", "center");
+      ctx.globalAlpha = 1;
+      if (pkt.state === "dead") {
+        txt("✕", pkt.x, pkt.y - 28, "700 20px " + MONO, "#D64545", "center");
+      }
+    }
+  }
+
+  function send(immediate) {
+    if (raf) cancelAnimationFrame(raf);
+    var v = verdict();
+    pkt = { x: 178, y: LANE, state: "fly", alpha: 1 };
+    var stopAt = v === "unpublished" ? hostX() - 30 : (v === "nolisten" ? contX() - 34 : contX() + 70);
+    cap.innerHTML = "…";
+    if (immediate) {                       /* screenshot hook: jump to the end state */
+      pkt.x = stopAt; pkt.state = v === "ok" ? "ok" : "dead";
+      draw(); caption(v); return;
+    }
+    (function step() {
+      if (pkt.x < stopAt) {
+        pkt.x += Math.max(4, (stopAt - pkt.x) * 0.10);
+        draw(); raf = requestAnimationFrame(step); return;
+      }
+      pkt.x = stopAt;
+      pkt.state = v === "ok" ? "ok" : "dead";
+      draw(); caption(v); raf = null;
+    })();
+  }
+
+  function caption(v) {
+    if (v === "ok") {
+      cap.innerHTML = "<span class='good'>200 OK.</span> Your request hit <b>:" + hostP +
+        "</b> on the server, the mapping carried it through the wall, and nginx was listening on <b>:" +
+        contP + "</b> inside. <b>-p " + hostP + ":" + contP + "</b> — <em>host first, container second</em>.";
+    } else if (v === "nolisten") {
+      cap.innerHTML = "<span class='dngr'>Connection reset.</span> The packet got <em>through</em> the wall — " +
+        "the mapping worked. But you pointed it at <b>:" + contP + "</b> inside, and nginx is listening on <b>:" +
+        LISTEN + "</b>. Nothing is home. You wrote the pair <b>backwards</b>: the container's port is the " +
+        "<em>second</em> number, and the image — not you — decides what it is.";
+    } else {
+      cap.innerHTML = "<span class='dngr'>Connection refused.</span> Nothing is published on <b>:" + hostP +
+        "</b>, so the request dies at the server's edge and never reaches the container. The container is " +
+        "running perfectly — it is just <em>unreachable</em>. Without <b>-p</b> a container is a closed box.";
+    }
+  }
+
+  function pick(group, attr, set) {
+    var b = document.getElementById(group).querySelectorAll("button");
+    for (var i = 0; i < b.length; i++) {
+      (function (btn) {
+        btn.addEventListener("click", function () {
+          for (var k = 0; k < b.length; k++) b[k].classList.toggle("on", b[k] === btn);
+          set(+btn.dataset[attr]); pkt = null; draw(); idle();
+        });
+      })(b[i]);
+    }
+  }
+  pick("gHost", "h", function (v) { hostP = v; });
+  pick("gCont", "c", function (v) { contP = v; });
+
+  document.getElementById("pub").addEventListener("click", function () {
+    published = !published; this.classList.toggle("on", published);
+    this.textContent = published ? "published" : "no -p";
+    pkt = null; draw(); idle();
+  });
+  document.getElementById("send").addEventListener("click", function () { send(false); });
+
+  function idle() {
+    if (!published) {
+      cap.innerHTML = "The container is running, but no port is published. Press <b>Send a request</b> " +
+        "and watch where the packet dies.";
+    } else if (contP !== LISTEN) {
+      cap.innerHTML = "You have mapped the host's <b>:" + hostP + "</b> to <b>:" + contP +
+        "</b> inside. nginx listens on <b>:" + LISTEN + "</b>. Press <b>Send a request</b> — does it matter?";
+    } else {
+      cap.innerHTML = "<b>-p " + hostP + ":" + contP + "</b> maps the server's <b>:" + hostP +
+        "</b> to the container's <b>:" + contP + "</b>. Press <b>Send a request</b>.";
+    }
+  }
+
+  window.addEventListener("resize", fit);
+  var m = /state=(\w+)/.exec(location.search);
+  if (m && m[1] === "swapped") { hostP = 80; contP = 8080;
+    document.querySelector("[data-h='80']").classList.add("on");
+    document.querySelector("[data-h='8080']").classList.remove("on");
+    document.querySelector("[data-c='8080']").classList.add("on");
+    document.querySelector("[data-c='80']").classList.remove("on"); }
+  fit(); idle();
+  if (m && m[1] === "swapped") send(true);
+})();
+</script>
+</body>
+</html>

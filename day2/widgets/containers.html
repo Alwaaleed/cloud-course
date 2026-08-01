@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VMs vs containers — stack them up and watch the cost</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 330px; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+  .hint { margin-left: auto; font-size: 12px; color: #8AA1A8; }
+  input[type=range] { width: 190px; accent-color: #1F8F89; }
+  .lab { font-size: 12px; color: #42606A; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <span class="lab">Apps to run</span>
+    <input type="range" id="n" min="1" max="6" value="1" step="1">
+    <span class="mono" id="nv" style="font-weight:700;color:#00567C">1</span>
+    <span class="sep"></span>
+    <button id="boot" class="primary">▶ Boot them</button>
+    <span class="hint" id="hint">drag to 6 and watch the left side pay for six copies of Ubuntu</span>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap"), nv = document.getElementById("nv");
+  var slider = document.getElementById("n");
+  var W = 1000, H = 330;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+
+  /* Honest toy numbers. A minimal Ubuntu guest OS really is a few hundred MB of
+     RAM before your app starts; an alpine-based container image really is tens
+     of MB. Boot: a VM cold-boots a kernel, a container is a process. */
+  var GUEST_OS_MB = 700, VM_BOOT_S = 45;
+  var CONT_MB     = 20,  CONT_BOOT_S = 0.4;
+  var HOST_OS_MB  = 700;          /* the container side pays for the kernel ONCE */
+  var APP_MB      = 40;           /* the app itself — identical on both sides */
+
+  var n = 1, raf = null, t0 = 0, booting = false, prog = 0;
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  function box(x, y, w, h, fill, stroke, r) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+    roundRect(x, y, w, h, r === undefined ? 5 : r); ctx.fill(); ctx.stroke();
+  }
+
+  function vmMB()   { return n * (GUEST_OS_MB + APP_MB); }
+  function contMB() { return HOST_OS_MB + n * (CONT_MB + APP_MB); }
+  function vmBoot()   { return VM_BOOT_S; }              /* they boot in parallel */
+  function contBoot() { return CONT_BOOT_S; }
+
+  var TOP = 34, BAR_H = 14;
+  function barY() { return H - BAR_H - 4; }
+
+  function drawStack(x, w, isVM) {
+    var baseY = barY() - 12, unit, i, y;
+    var title = isVM ? "VIRTUAL MACHINES" : "CONTAINERS";
+    txt(title, x + w / 2, 22, "700 12px " + MONO, isVM ? "#8AA1A8" : "#00567C", "center");
+
+    /* shared foundation: hardware, then (containers only) one host OS */
+    box(x, baseY - 26, w, 26, "#EEF3F3", "#CDD8DA");
+    txt("physical server", x + w / 2, baseY - 13, "11px " + MONO, "#8AA1A8", "center");
+    var floor = baseY - 26;
+
+    if (isVM) {
+      box(x, floor - 24, w, 24, "#E6EDEF", "#CDD8DA");
+      txt("hypervisor", x + w / 2, floor - 12, "11px " + MONO, "#8AA1A8", "center");
+      floor -= 24;
+    } else {
+      box(x, floor - 24, w, 24, "rgba(0,86,124,.12)", "#00567C");
+      txt("host OS — shared kernel  " + HOST_OS_MB + " MB", x + w / 2, floor - 12,
+          "700 11px " + MONO, "#00567C", "center");
+      floor -= 24;
+      box(x, floor - 22, w, 22, "rgba(0,86,124,.07)", "#9DB6C0");
+      txt("docker engine", x + w / 2, floor - 11, "11px " + MONO, "#5C7880", "center");
+      floor -= 22;
+    }
+
+    /* The stacked units — this is the picture: how tall the tower gets. The VM
+       unit shrinks to fit six of them rather than running off the canvas, but it
+       is always clearly the taller of the two, which is the whole point. */
+    var room = (floor - TOP) / n - 5;
+    unit = isVM ? Math.max(30, Math.min(46, room)) : Math.max(16, Math.min(22, room));
+    for (i = 0; i < n; i++) {
+      y = floor - (i + 1) * (unit + 5);
+      var lit = prog >= (i + 1) / n || !booting;
+      var alpha = booting ? (lit ? 1 : 0.18) : 1;
+      ctx.globalAlpha = alpha;
+      if (isVM) {
+        var appH = Math.min(15, unit * 0.38), appY = y + unit - appH - 4;
+        box(x + 6, y, w - 12, unit, "rgba(214,69,69,.10)", "#D64545");
+        txt("guest OS  " + GUEST_OS_MB + " MB", x + w / 2, y + (unit - appH - 4) / 2,
+            "700 10px " + MONO, "#D64545", "center");
+        box(x + 16, appY, w - 32, appH, "rgba(31,143,137,.16)", "#1F8F89", 3);
+        txt("app " + APP_MB + " MB", x + w / 2, appY + appH / 2, "9px " + MONO, "#1F8F89", "center");
+      } else {
+        box(x + 6, y, w - 12, unit, "rgba(31,143,137,.16)", "#1F8F89");
+        txt("app " + APP_MB + " MB  +  " + CONT_MB + " MB layer", x + w / 2, y + 11,
+            "700 10px " + MONO, "#1F8F89", "center");
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawBar(x, w, mb, peak, color, label) {
+    var by = barY(), fillW = Math.max(10, w * (mb / peak));
+    ctx.fillStyle = "#EEF3F3"; roundRect(x, by, w, BAR_H, BAR_H / 2); ctx.fill();
+    ctx.fillStyle = color; roundRect(x, by, fillW, BAR_H, BAR_H / 2); ctx.fill();
+    /* Label inside the fill only when it fits, otherwise just past its end —
+       white-on-track was unreadable whenever the bar was short. */
+    if (fillW > 86) txt(label, x + fillW / 2, by + BAR_H / 2, "700 11px " + MONO, "#FFFFFF", "center");
+    else            txt(label, x + fillW + 8, by + BAR_H / 2, "700 11px " + MONO, color, "left");
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var pad = 18, gap = 26;
+    var colW = (W - pad * 2 - gap) / 2;
+    drawStack(pad, colW, true);
+    drawStack(pad + colW + gap, colW, false);
+
+    var peak = Math.max(vmMB(), contMB(), 1);
+    drawBar(pad, colW, vmMB(), peak, "#D64545", vmMB() + " MB");
+    drawBar(pad + colW + gap, colW, contMB(), peak, "#1F8F89", contMB() + " MB");
+  }
+
+  function caption() {
+    var save = vmMB() - contMB();
+    var pct = Math.round(save / vmMB() * 100);
+    if (n === 1) {
+      cap.innerHTML = "At <b>one</b> app the two look almost even — the container side still pays " +
+        "for a kernel. Drag the slider and watch what happens on the way to six.";
+    } else {
+      cap.innerHTML = "Six apps: the VM side bought <b>" + n + " copies of the operating system</b> (" +
+        vmMB() + " MB), the container side bought <em>one</em> and stacked " + n + " thin layers on it (" +
+        contMB() + " MB). Same apps, <b>" + save + " MB</b> less — about <b>" + pct + "%</b>. " +
+        "And they start in <span class='good'>" + CONT_BOOT_S + "s</span> instead of " +
+        "<span class='dngr'>" + VM_BOOT_S + "s</span>, because nothing has to boot a kernel.";
+    }
+  }
+
+  function boot() {
+    booting = true; prog = 0; t0 = 0;
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(step);
+  }
+  function step(now) {
+    if (!t0) t0 = now;
+    prog = Math.min(1, (now - t0) / 1400);
+    draw();
+    if (prog < 1) raf = requestAnimationFrame(step);
+    else { raf = null; booting = false; draw(); caption(); }
+  }
+
+  slider.addEventListener("input", function () {
+    n = +this.value; nv.textContent = n; booting = false;
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    draw(); caption();
+  });
+  document.getElementById("boot").addEventListener("click", boot);
+  window.addEventListener("resize", fit);
+
+  var m = /n=(\d)/.exec(location.search);
+  if (m) { n = Math.max(1, Math.min(6, +m[1])); slider.value = n; nv.textContent = n; }
+  fit(); caption();
+})();
+</script>
+</body>
+</html>

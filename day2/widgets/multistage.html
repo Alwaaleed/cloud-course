@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Multi-stage build — what actually ships</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 340px; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+  .hint { margin-left: auto; font-size: 12px; color: #8AA1A8; }
+  .lab { font-size: 12px; color: #42606A; font-weight: 700; }
+  button.sm { padding: 6px 11px; font-size: 12px; }
+  #gCopy { display: none; gap: 0; align-items: center; }
+  #gCopy.show { display: inline-flex; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <button id="mSingle" class="sm">single stage</button>
+    <button id="mMulti" class="sm on">multi stage</button>
+    <span class="sep"></span>
+    <span id="gCopy">
+      <span class="lab" style="margin-right:8px">COPY --from=build</span>
+      <button class="sm on" data-cp="dist">/app/dist</button><!--
+   --><button class="sm" data-cp="all">/app</button>
+    </span>
+    <span class="sep"></span>
+    <button id="run" class="primary">▶ Build</button>
+    <span class="hint" id="hint">try copying /app instead — the classic mistake</span>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap");
+  var W = 1000, H = 340;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+
+  /* Toy-but-honest sizes for a Vite + React app. Real numbers move around with
+     dependencies; the ratio is the point and it is not exaggerated. */
+  var L_NODE   = { name: "node:22-alpine",  mb: 120, col: "#8AA1A8" };
+  var L_MODS   = { name: "node_modules",    mb: 210, col: "#D64545" };
+  var L_SRC    = { name: "source + config", mb: 4,   col: "#8AA1A8" };
+  var L_DIST   = { name: "/app/dist",       mb: 2,   col: "#1F8F89" };
+  var L_CADDY  = { name: "caddy:2-alpine",  mb: 44,  col: "#00567C" };
+
+  var mode = "multi", copyWhat = "dist";
+  var step = 0, raf = null, t0 = 0;      /* step 0..4 */
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  function box(x, y, w, h, fill, stroke, r) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+    roundRect(x, y, w, h, r === undefined ? 5 : r); ctx.fill(); ctx.stroke();
+  }
+  function tint(hex, a) {
+    var r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+  }
+
+  function carried() { return copyWhat === "dist" ? L_DIST.mb : L_MODS.mb + L_SRC.mb + L_DIST.mb; }
+  function finalMB() {
+    if (mode === "single") return L_NODE.mb + L_MODS.mb + L_SRC.mb + L_DIST.mb;
+    return L_CADDY.mb + carried();
+  }
+  var MAXMB = 336;   /* the single-stage total — the yardstick both bars share */
+
+  /* one layer block; h scales with MB but never smaller than legible */
+  function layerH(mb) { return Math.max(20, Math.min(64, 20 + mb * 0.14)); }
+
+  function drawStack(x, w, layers, label, sub, dim) {
+    var y = 96;
+    txt(label, x, 44, "700 12px " + MONO, dim ? "#BCC9CC" : "#00567C");
+    if (sub) txt(sub, x, 62, "11px " + MONO, dim ? "#CDD8DA" : "#8AA1A8");
+    for (var i = 0; i < layers.length; i++) {
+      var L = layers[i], h = layerH(L.mb);
+      ctx.globalAlpha = dim ? 0.28 : 1;
+      box(x, y, w, h, tint(L.col, 0.14), L.col);
+      txt(L.name, x + 10, y + h / 2, "700 11px " + MONO, L.col);
+      txt(L.mb + " MB", x + w - 10, y + h / 2, "11px " + MONO, L.col, "right");
+      ctx.globalAlpha = 1;
+      y += h + 4;
+    }
+    return y;
+  }
+
+  function drawBar(x, w, mb, color) {
+    var by = H - 30;
+    ctx.fillStyle = "#EEF3F3"; roundRect(x, by, w, 18, 9); ctx.fill();
+    var fw = Math.max(12, w * (mb / MAXMB));
+    ctx.fillStyle = color; roundRect(x, by, fw, 18, 9); ctx.fill();
+    var t = "ships: " + mb + " MB";
+    if (fw > 120) txt(t, x + fw / 2, by + 9, "700 12px " + MONO, "#FFFFFF", "center");
+    else          txt(t, x + fw + 9, by + 9, "700 12px " + MONO, color, "left");
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var pad = 18, colW = (W - pad * 2 - 150) / 2;
+    var lx = pad, rx = pad + colW + 150;
+
+    if (mode === "single") {
+      txt("$ docker build .   →   one FROM, everything ships", pad, 20, "700 13px " + MONO, "#00567C");
+      var ls = [L_NODE, L_MODS, L_SRC, L_DIST].slice(0, Math.max(1, step));
+      drawStack(lx, colW, ls, "FROM node:22-alpine", "build tools AND the result, in one image");
+      if (step >= 4) {
+        txt("the build tools you never needed at runtime", rx, 44, "700 12px " + MONO, "#D64545");
+        txt("ship anyway: " + (L_NODE.mb + L_MODS.mb) + " MB of them", rx, 62, "11px " + MONO, "#D64545");
+        drawBar(rx, colW, finalMB(), "#D64545");
+      }
+      if (step >= 1) drawBar(lx, colW, ls.reduce(function (a, b) { return a + b.mb; }, 0), "#D64545");
+      return;
+    }
+
+    txt("$ docker build .   →   two FROMs; only stage 2 ships", pad, 20, "700 13px " + MONO, "#00567C");
+
+    /* stage 1 fills first, then is thrown away */
+    var s1 = [L_NODE, L_MODS, L_SRC, L_DIST].slice(0, Math.min(4, Math.max(1, step)));
+    var dim1 = step >= 4;
+    drawStack(lx, colW, s1, "STAGE 1  AS build", dim1 ? "discarded — never pushed" : "installs, compiles, produces /app/dist", dim1);
+
+    /* the COPY --from arrow */
+    if (step >= 3) {
+      var ay = 200, ax0 = lx + colW + 14, ax1 = rx - 14;
+      ctx.strokeStyle = "#F2D200"; ctx.lineWidth = 8; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(ax0, ay); ctx.lineTo(ax1, ay); ctx.stroke();
+      ctx.lineCap = "butt";
+      ctx.fillStyle = "#F2D200";
+      ctx.beginPath(); ctx.moveTo(ax1 + 12, ay); ctx.lineTo(ax1 - 6, ay - 10); ctx.lineTo(ax1 - 6, ay + 10);
+      ctx.closePath(); ctx.fill();
+      txt("COPY --from=build", (ax0 + ax1) / 2, ay - 22, "700 11px " + MONO, "#A08800", "center");
+      /* short enough to stay inside the 122 px gutter between the two stacks */
+      txt(copyWhat === "dist" ? "/app/dist" : "/app",
+          (ax0 + ax1) / 2, ay + 22, "700 11px " + MONO,
+          copyWhat === "dist" ? "#1F8F89" : "#D64545", "center");
+      txt(carried() + " MB", (ax0 + ax1) / 2, ay + 40, "11px " + MONO, "#8AA1A8", "center");
+    }
+
+    /* stage 2 */
+    if (step >= 2) {
+      var s2 = [L_CADDY];
+      if (step >= 4) {
+        if (copyWhat === "dist") s2 = [L_CADDY, L_DIST];
+        else s2 = [L_CADDY, L_MODS, L_SRC, L_DIST];
+      }
+      drawStack(rx, colW, s2, "STAGE 2  FROM caddy:2-alpine", "this is the image you push");
+      if (step >= 4) drawBar(rx, colW, finalMB(), copyWhat === "dist" ? "#1F8F89" : "#D64545");
+    }
+    if (step >= 1 && !dim1) {
+      drawBar(lx, colW, s1.reduce(function (a, b) { return a + b.mb; }, 0), "#8AA1A8");
+    }
+  }
+
+  function caption() {
+    if (step < 4) { cap.innerHTML = "Press <b>▶ Build</b>."; return; }
+    if (mode === "single") {
+      cap.innerHTML = "One <b>FROM</b>, so everything that touched the build ships to your server: " +
+        "the Node toolchain and <b>" + L_MODS.mb + " MB of node_modules</b> that exist only to produce " +
+        "<b>" + L_DIST.mb + " MB</b> of finished files. <span class='dngr'>" + finalMB() + " MB</span> pulled " +
+        "on every deploy, to serve 2 MB.";
+    } else if (copyWhat === "dist") {
+      cap.innerHTML = "<span class='good'>" + finalMB() + " MB.</span> Stage 1 did the work and was " +
+        "<b>thrown away</b> — it is never pushed. Stage 2 starts from a tiny web server and " +
+        "<b>COPY --from=build</b> carries across only <em>/app/dist</em>, the finished site. " +
+        "That is why <b>FROM</b> appears twice: the first stage is a workshop, the second is the parcel.";
+    } else {
+      cap.innerHTML = "<span class='dngr'>" + finalMB() + " MB.</span> You copied <b>/app</b> — the whole " +
+        "working directory — so <em>node_modules came with it</em> and the second stage is nearly as fat as " +
+        "the first. Multi-stage does not shrink anything by itself: <b>what you carry across</b> is the " +
+        "entire saving. Copy the <em>result</em>, not the workshop.";
+    }
+  }
+
+  function run() {
+    step = 0;
+    if (raf) cancelAnimationFrame(raf);
+    t0 = 0;
+    raf = requestAnimationFrame(function tick(now) {
+      if (!t0) t0 = now;
+      var s = Math.floor((now - t0) / 330) + 1;
+      if (s !== step) { step = Math.min(4, s); draw(); }
+      if (step < 4) raf = requestAnimationFrame(tick);
+      else { raf = null; caption(); }
+    });
+  }
+  function settle() { step = 4; draw(); caption(); }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("mSingle").classList.toggle("on", m === "single");
+    document.getElementById("mMulti").classList.toggle("on", m === "multi");
+    document.getElementById("gCopy").classList.toggle("show", m === "multi");
+    settle();
+  }
+  document.getElementById("mSingle").addEventListener("click", function () { setMode("single"); });
+  document.getElementById("mMulti").addEventListener("click", function () { setMode("multi"); });
+  document.getElementById("run").addEventListener("click", run);
+  var cb = document.querySelectorAll("button[data-cp]");
+  for (var i = 0; i < cb.length; i++) {
+    cb[i].addEventListener("click", function () {
+      copyWhat = this.dataset.cp;
+      for (var k = 0; k < cb.length; k++) cb[k].classList.toggle("on", cb[k] === this);
+      settle();
+    });
+  }
+
+  window.addEventListener("resize", fit);
+  var m = /state=(\w+)/.exec(location.search);
+  document.getElementById("gCopy").classList.add("show");
+  if (m && m[1] === "single") { setMode("single"); }
+  else if (m && m[1] === "fat") { copyWhat = "all";
+    document.querySelector("[data-cp='all']").classList.add("on");
+    document.querySelector("[data-cp='dist']").classList.remove("on"); }
+  fit(); settle();
+})();
+</script>
+</body>
+</html>

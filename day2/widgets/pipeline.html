@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deploy it yourself, or let the robot do it</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 356px; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+  .hint { margin-left: auto; font-size: 12px; color: #8AA1A8; }
+  button.sm { padding: 6px 10px; font-size: 12px; }
+  #gMan { display: none; gap: 6px; flex-wrap: wrap; align-items: center; }
+  #gMan.show { display: inline-flex; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <button id="mMan" class="sm on">by hand</button>
+    <button id="mAuto" class="sm">GitHub Actions</button>
+    <span class="sep"></span>
+    <span id="gMan" class="show">
+      <button class="sm" data-s="0">commit + push</button>
+      <button class="sm" data-s="1">docker build</button>
+      <button class="sm" data-s="2">docker push</button>
+      <button class="sm" data-s="3">ssh</button>
+      <button class="sm" data-s="4">docker pull</button>
+      <button class="sm" data-s="5">rm -f</button>
+      <button class="sm" data-s="6">docker run</button>
+    </span>
+    <button id="go" class="primary" style="display:none">▶ git push</button>
+    <button id="rs" class="sm">reset</button>
+    <span class="hint" id="hint">click the seven steps in order — miss one and see what ships</span>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap"), hint = document.getElementById("hint");
+  var W = 1000, H = 356;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+
+  var STEPS = [
+    { k: "commit + push",  s: 12 },
+    { k: "docker build",   s: 95 },
+    { k: "docker push",    s: 70 },
+    { k: "ssh in",         s: 20 },
+    { k: "docker pull",    s: 55 },
+    { k: "docker rm -f",   s: 5  },
+    { k: "docker run",     s: 8  }
+  ];
+  var NEW = "#7C3AED", OLD = "#F59E0B";     /* the badge's new vs old colour */
+
+  var mode = "man";
+  var done = [], secs = 0, missedPull = false, finished = false;
+  var autoT = 0, raf = null;
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  function box(x, y, w, h, fill, stroke, r) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+    roundRect(x, y, w, h, r === undefined ? 6 : r); ctx.fill(); ctx.stroke();
+  }
+
+  /* The badge, drawn for real: a gradient card whose colour is the thing that
+     either did or did not make it to the server. */
+  function drawBadge(x, y, w, h, colour, label, live) {
+    var g = ctx.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, colour); g.addColorStop(1, "#06B6D4");
+    ctx.fillStyle = g; roundRect(x, y, w, h, 10); ctx.fill();
+    ctx.strokeStyle = "#CDD8DA"; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,.92)";
+    ctx.beginPath(); ctx.arc(x + w / 2, y + 42, 22, 0, Math.PI * 2); ctx.fill();
+    txt("badge", x + w / 2, y + 84, "700 13px " + MONO, "#FFFFFF", "center");
+    txt(label, x + w / 2, y + h + 16, "700 11px " + MONO, live ? "#1F8F89" : "#8AA1A8", "center");
+  }
+
+  function drawSteps(x, y, w) {
+    var i, sy = y;
+    for (i = 0; i < STEPS.length; i++) {
+      var ok = done.indexOf(i) !== -1;
+      var order = done.indexOf(i);
+      box(x, sy, w, 26, ok ? "rgba(31,143,137,.14)" : "#FFFFFF", ok ? "#1F8F89" : "#E0E7E8");
+      txt((ok ? "✓ " : "  ") + STEPS[i].k, x + 10, sy + 13, "700 11px " + MONO, ok ? "#1F8F89" : "#8AA1A8");
+      if (ok) txt("+" + STEPS[i].s + "s", x + w - 10, sy + 13, "10px " + MONO, "#8AA1A8", "right");
+      /* Only a genuine inversion counts — an earlier step clicked AFTER this one.
+         Comparing against i alone flagged everything below a step you skipped. */
+      if (ok) {
+        for (var j = 0; j < i; j++) {
+          if (done.indexOf(j) > order) {
+            txt("out of order", x + w - 62, sy + 13, "700 9px " + MONO, "#D64545", "right");
+            break;
+          }
+        }
+      }
+      sy += 30;
+    }
+    return sy;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var pad = 18, colW = 250;
+
+    if (mode === "man") {
+      txt("YOU, at 5pm on a Thursday", pad, 20, "700 12px " + MONO, "#00567C");
+      drawSteps(pad, 40, colW);
+      txt("elapsed  " + secs + "s", pad, 40 + 7 * 30 + 14, "700 12px " + MONO, "#42606A");
+    } else {
+      txt("GITHUB ACTIONS — you pushed, then went home", pad, 20, "700 12px " + MONO, "#00567C");
+      var i, sy = 40;
+      for (i = 0; i < STEPS.length; i++) {
+        var reached = autoT > (i + 1) / STEPS.length;
+        box(pad, sy, colW, 26, reached ? "rgba(0,86,124,.12)" : "#FFFFFF", reached ? "#00567C" : "#E0E7E8");
+        txt((reached ? "✓ " : "· ") + STEPS[i].k, pad + 10, sy + 13, "700 11px " + MONO,
+            reached ? "#00567C" : "#8AA1A8");
+        sy += 30;
+      }
+      txt(autoT >= 1 ? "elapsed  0s of your time" : "running…", pad, sy + 14, "700 12px " + MONO, "#42606A");
+    }
+
+    /* What crosses the gap is the image — and in the stale ending, nothing does.
+       Drawing it stops the middle of the widget being dead space. */
+    var gx0 = pad + colW + 26, gx1 = W - 318, gy = 150;
+    var moved = mode === "auto" ? autoT >= 1 : (finished && !missedPull);
+    ctx.strokeStyle = moved ? "#F2D200" : "#E0E7E8"; ctx.lineWidth = moved ? 7 : 2;
+    if (!moved) ctx.setLineDash([6, 6]);
+    ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(gx0, gy); ctx.lineTo(gx1, gy); ctx.stroke();
+    ctx.setLineDash([]); ctx.lineCap = "butt";
+    txt("cloud-explorer:latest", (gx0 + gx1) / 2, gy - 20, "700 11px " + MONO,
+        moved ? "#A08800" : "#BCC9CC", "center");
+    txt(moved ? "pulled — the new image" : (finished ? "never pulled" : "waiting on docker pull"),
+        (gx0 + gx1) / 2, gy + 20, "11px " + MONO, moved ? "#1F8F89" : "#D64545", "center");
+
+    /* the server + what it is actually serving */
+    var sx = W - 300, sy2 = 52;
+    box(sx - 18, 36, 300, H - 72, "rgba(0,86,124,.05)", "#00567C");
+    txt("YOUR SERVER", sx - 6, 54, "700 11px " + MONO, "#00567C");
+
+    var shipped = shippedColour();
+    drawBadge(sx + 60, 96, 120, 110, shipped.col, shipped.label, shipped.live);
+
+    if (shipped.stale) {
+      txt("✕ still the old colour", sx + 120, 250, "700 12px " + MONO, "#D64545", "center");
+    }
+  }
+
+  function shippedColour() {
+    if (mode === "auto") {
+      if (autoT >= 1) return { col: NEW, label: "https://…sslip.io", live: true };
+      return { col: OLD, label: "deploying…", live: false };
+    }
+    if (!finished) return { col: OLD, label: "the live badge", live: false };
+    /* the trap: running without pulling restarts the SAME old image */
+    if (missedPull) return { col: OLD, label: "https://…sslip.io", live: true, stale: true };
+    return { col: NEW, label: "https://…sslip.io", live: true };
+  }
+
+  function clickStep(i) {
+    if (mode !== "man" || done.indexOf(i) !== -1) return;
+    done.push(i); secs += STEPS[i].s;
+    if (i === 6) {                       /* docker run — the deploy is now decided */
+      finished = true;
+      missedPull = done.indexOf(4) === -1;
+    }
+    draw(); caption();
+  }
+
+  function caption() {
+    if (mode === "auto") {
+      cap.innerHTML = autoT >= 1
+        ? "<span class='good'>Live.</span> The robot ran <b>the same seven steps</b> — build, push, ssh, " +
+          "pull, remove, run — in about <b>" + total() + "s</b>, and none of them were yours. You changed " +
+          "one line and pushed. <b>That is all CI/CD is</b>: your commands, written down once, run by a " +
+          "machine that never forgets step four."
+        : "Pushing to <b>main</b>…";
+      return;
+    }
+    if (!finished) {
+      cap.innerHTML = done.length === 0
+        ? "You changed <b>gradientColors</b> and want it live. Click the seven steps, in order."
+        : "…" + done.length + " of 7 done, <b>" + secs + "s</b> gone.";
+      return;
+    }
+    if (missedPull) {
+      cap.innerHTML = "<span class='dngr'>You skipped <b>docker pull</b>.</span> " +
+        "<b>docker run</b> happily started the image that was already on the server — the <em>old</em> one. " +
+        "Everything looked like it worked: no error, container running, site up. " +
+        "It is just serving <b>yesterday's colours</b>. This is the failure that eats an afternoon.";
+    } else {
+      cap.innerHTML = "Live, after <b>" + secs + "s</b> and seven manual steps. Now do it again for the " +
+        "next one-line change. And the one after that. <em>Every single time.</em> " +
+        "Switch to <b>GitHub Actions</b>.";
+    }
+  }
+  function total() { return STEPS.reduce(function (a, b) { return a + b.s; }, 0); }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("mMan").classList.toggle("on", m === "man");
+    document.getElementById("mAuto").classList.toggle("on", m === "auto");
+    document.getElementById("gMan").classList.toggle("show", m === "man");
+    document.getElementById("go").style.display = m === "auto" ? "" : "none";
+    hint.textContent = m === "man"
+      ? "click the seven steps in order — miss one and see what ships"
+      : "press git push once, then watch";
+    reset();
+  }
+  function reset() {
+    done = []; secs = 0; finished = false; missedPull = false; autoT = 0;
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    draw(); caption();
+  }
+  function runAuto() {
+    var t0 = 0;
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(function tick(now) {
+      if (!t0) t0 = now;
+      autoT = Math.min(1, (now - t0) / 2200);
+      draw();
+      if (autoT < 1) raf = requestAnimationFrame(tick);
+      else { raf = null; caption(); }
+    });
+  }
+
+  document.getElementById("mMan").addEventListener("click", function () { setMode("man"); });
+  document.getElementById("mAuto").addEventListener("click", function () { setMode("auto"); });
+  document.getElementById("go").addEventListener("click", runAuto);
+  document.getElementById("rs").addEventListener("click", reset);
+  var sb = document.querySelectorAll("button[data-s]");
+  for (var i = 0; i < sb.length; i++) {
+    (function (b) { b.addEventListener("click", function () { clickStep(+b.dataset.s); }); })(sb[i]);
+  }
+
+  window.addEventListener("resize", fit);
+  var m = /state=(\w+)/.exec(location.search);
+  fit();
+  if (m && m[1] === "stale") {            /* screenshot hook: the skipped-pull ending */
+    done = [0, 1, 2, 3, 5]; secs = 202; clickStep(6);
+  } else if (m && m[1] === "auto") {
+    setMode("auto"); autoT = 1; draw(); caption();
+  } else { caption(); }
+})();
+</script>
+</body>
+</html>

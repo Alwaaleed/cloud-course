@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 2 — Build it, deploy it, then never do that again</title>
+<style>
+:root{
+  --petrol:#00567d; --petrol-d:#003f5e; --teal:#1f8f89; --turq:#33d2cb;
+  --yellow:#f2d200; --ink:#12333d; --slate:#2f4f59; --muted:#5c7880;
+  --bg:#f6f8f8; --bg-2:#eef3f3; --card:#fff; --line:#e0e7e8;
+  --code-bg:#0f2b34; --code-ink:#dff3f2;
+  --sans:"Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono","Cascadia Code","SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:84px}
+body{margin:0; font-family:var(--sans); color:var(--ink); background:var(--bg);
+  -webkit-font-smoothing:antialiased; line-height:1.6}
+
+/* ---- top bar ---- */
+.bar{position:sticky; top:0; z-index:30; background:rgba(246,248,248,.94);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.bar .in{max-width:1240px; margin:0 auto; padding:10px 26px; display:flex;
+  align-items:center; gap:16px}
+.bar img{height:34px; width:auto; mix-blend-mode:multiply}
+.bar .crumb{font-size:12px; font-weight:800; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--teal)}
+.bar .spacer{flex:1}
+.bar a.back{font-size:13px; font-weight:700; color:var(--petrol); text-decoration:none;
+  border:1px solid var(--line); background:var(--card); padding:.45em 1em; border-radius:2px}
+.bar a.back:hover{border-color:var(--petrol)}
+
+/* ---- hero ---- */
+.hero{max-width:1240px; margin:0 auto; padding:52px 26px 30px}
+.hero .kicker{margin:0 0 12px; font-size:13px; font-weight:800; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--teal)}
+.hero h1{margin:0; font-size:clamp(32px,5vw,54px); line-height:1.05; letter-spacing:-.02em;
+  color:var(--petrol); font-weight:800; max-width:18ch}
+.hero .rule{width:72px; height:6px; border-radius:3px; background:var(--yellow); margin:22px 0 22px}
+.meta{display:flex; flex-wrap:wrap; gap:10px; margin:0; padding:0; list-style:none}
+.meta li{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--turq);
+  padding:.5em .9em; border-radius:2px}
+.meta .k{display:block; font-size:10.5px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted)}
+.meta .v{font-size:14px; font-weight:700; color:var(--slate)}
+
+/* ---- layout ---- */
+.layout{max-width:1240px; margin:0 auto; padding:14px 26px 80px;
+  display:grid; grid-template-columns:236px minmax(0,1fr); gap:44px; align-items:start}
+.toc{position:sticky; top:78px; max-height:calc(100vh - 100px); overflow-y:auto;
+  border-left:2px solid var(--line); padding-left:16px}
+.toc-h{margin:0 0 10px; font-size:11px; font-weight:800; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted)}
+.toc ul{list-style:none; margin:0; padding:0}
+.toc li{margin:0}
+.toc a{display:block; padding:3px 0; font-size:13.5px; line-height:1.35; color:var(--muted);
+  text-decoration:none}
+.toc a:hover{color:var(--petrol)}
+.toc .l1 a{margin-top:12px; font-weight:800; font-size:12px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--petrol)}
+.toc .l2 a{padding-left:2px}
+
+/* ---- content ---- */
+.doc{min-width:0; max-width:78ch}
+.doc h1{margin:56px 0 6px; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
+  color:var(--petrol); border-top:4px solid var(--yellow); padding-top:18px}
+.doc h2{margin:44px 0 4px; font-size:clamp(20px,2.6vw,25px); font-weight:800; letter-spacing:-.01em;
+  color:var(--petrol)}
+.doc h3{margin:30px 0 4px; font-size:16px; font-weight:800; letter-spacing:.02em; color:var(--teal)}
+.doc p{margin:.85em 0; color:var(--slate); font-size:16px}
+.doc hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+.doc a{color:var(--petrol)}
+.doc strong{color:var(--ink)}
+.doc em{color:var(--muted)}
+.doc ul,.doc ol{color:var(--slate); font-size:16px}
+
+/* code */
+.doc code{font-family:var(--mono); font-size:.88em; background:var(--bg-2);
+  border:1px solid var(--line); border-radius:3px; padding:.1em .38em; color:var(--petrol-d)}
+.doc pre{background:var(--code-bg); color:var(--code-ink); border-radius:3px;
+  border-left:4px solid var(--turq); padding:16px 18px; overflow-x:auto; margin:1.1em 0}
+.doc pre code{background:none; border:0; padding:0; color:inherit; font-size:13.5px; line-height:1.55}
+
+/* tables */
+.tw{overflow-x:auto; margin:1.2em 0; border:1px solid var(--line); border-radius:2px; background:var(--card)}
+.doc table{border-collapse:collapse; width:100%; font-size:14px}
+.doc th{text-align:left; font-family:var(--mono); font-size:11px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--teal);
+  background:var(--bg-2); border-bottom:1px solid var(--line); padding:10px 14px; white-space:nowrap}
+.doc td{border-bottom:1px solid var(--line); padding:10px 14px; color:var(--slate);
+  vertical-align:top; line-height:1.5}
+.doc tbody tr:last-child td{border-bottom:0}
+.doc td:first-child{color:var(--petrol); font-weight:700; white-space:nowrap}
+.doc td code{white-space:nowrap}
+
+/* callouts */
+.callout{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--petrol);
+  border-radius:2px; padding:2px 20px; margin:1.3em 0}
+.callout p{font-size:15px}
+
+/* downloadable file button */
+.doc p:has(> a.dl:only-child){margin:.6em 0 1.4em}
+a.dl{display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:800;
+  font-size:14.5px; color:#fff; background:var(--petrol); border-radius:4px; padding:.7em 1.3em;
+  box-shadow:0 2px 8px rgba(0,86,125,.18)}
+a.dl:hover{background:var(--petrol-d)}
+
+/* exercises */
+.doc p.task{position:relative; background:var(--card); border:1px solid var(--line);
+  border-left:4px solid var(--turq); border-radius:2px; padding:14px 18px 14px 74px;
+  margin:1.5em 0 0; font-size:16px; color:var(--ink)}
+.tid{position:absolute; left:16px; top:15px; font-family:var(--mono); font-weight:800; font-size:13px;
+  color:var(--petrol); background:var(--bg-2); border-radius:2px; padding:.25em .55em; letter-spacing:.02em}
+details.hint{margin:0 0 .2em; border:1px solid var(--line); border-top:0; background:var(--bg-2);
+  border-radius:0 0 2px 2px; font-size:14.5px}
+details.hint summary{cursor:pointer; list-style:none; padding:.5em 18px; font-weight:700;
+  font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+details.hint summary::-webkit-details-marker{display:none}
+details.hint summary::before{content:"▸ "; color:var(--turq)}
+details[open].hint summary::before{content:"▾ "}
+details.hint summary:hover{color:var(--petrol)}
+.hint-body{padding:0 18px .8em; color:var(--slate); font-style:italic}
+p.wrapup{background:rgba(242,210,0,.14); border:1px solid rgba(242,210,0,.5);
+  border-radius:2px; padding:14px 18px; font-size:15.5px; color:var(--ink)}
+
+footer{border-top:1px solid var(--line); background:var(--bg)}
+.foot{max-width:1240px; margin:0 auto; padding:20px 26px; display:flex; gap:16px;
+  flex-wrap:wrap; justify-content:space-between; font-size:13px; color:var(--muted)}
+.foot .slogan{font-weight:700; color:var(--slate)}
+
+@media (max-width:960px){
+  .layout{grid-template-columns:1fr; gap:0}
+  .toc{position:static; max-height:none; border-left:0; border-top:1px solid var(--line);
+    padding:16px 0 24px; margin-bottom:8px}
+  .toc ul{columns:2; column-gap:24px}
+}
+@media print{
+  .bar,.toc{display:none}
+  body{background:#fff}
+  .layout{display:block; padding:0 0 20px}
+  details.hint{background:#fff}
+  details.hint > .hint-body{display:block !important}
+  .doc h1,.doc h2{break-after:avoid}
+  p.task{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="in">
+    <img src="../MajalLogo.jpg" alt="Majal">
+    <span class="crumb">Day 2 · Lab 2</span>
+    <span class="spacer"></span>
+    <a class="back" href="../index.html">← Course</a>
+  </div>
+</div>
+
+<div class="hero">
+  <p class="kicker">Majal Initiative · Cloud Computing Bootcamp</p>
+  <h1>Lab 2 — Build it, deploy it, then never do that again</h1>
+  <div class="rule"></div>
+  <ul class="meta"><li><span class="k">Duration</span><span class="v">A full day, across two sessions</span></li><li><span class="k">Environment</span><span class="v">Your laptop (VS Code + Docker Desktop) and yesterday's server</span></li><li><span class="k">Level</span><span class="v">Beginner</span></li><li><span class="k">Format</span><span class="v">Two milestones and three fill-in tasks, each with a hint</span></li></ul>
+</div>
+
+<div class="layout">
+<nav class="toc" aria-label="Lab contents"><p class="toc-h">Contents</p><ul>
+<li class="l2"><a href="#objectives">Objectives</a></li>
+<li class="l2"><a href="#setup">Setup</a></li>
+<li class="l2"><a href="#1-fork-the-starter-then-clone-your-fork">1. Fork the starter, then clone your fork</a></li>
+<li class="l2"><a href="#2-make-the-badge-yours-then-push-it">2. Make the badge yours, then push it</a></li>
+<li class="l2"><a href="#3-hisham-s-mystery-container">3. Hisham&#x27;s mystery container</a></li>
+<li class="l2"><a href="#4-install-docker-on-your-server">4. Install Docker on your server</a></li>
+<li class="l2"><a href="#5-complete-the-dockerfile">5. Complete the Dockerfile</a></li>
+<li class="l2"><a href="#6-build-push-pull-run-by-hand">6. Build, push, pull, run — by hand</a></li>
+<li class="l2"><a href="#7-feel-the-pain-then-remove-it">7. Feel the pain, then remove it</a></li>
+<li class="l2"><a href="#8-finish-line">8. Finish line</a></li>
+</ul></nav>
+<main class="doc">
+<h2 id="objectives">Objectives</h2>
+<p>By the end of this lab your own web app will be live on the internet, on the
+server you built yesterday, over HTTPS with a trusted padlock — and pushing a
+one-line change to GitHub will redeploy it without you touching the server at
+all. You will have written a Dockerfile, published an image to a registry, and
+built a CI/CD pipeline.</p>
+<h2 id="setup">Setup</h2>
+<p>You need four things before you start: your <strong>server from Day 1</strong> still running,
+<strong>VS Code</strong>, <strong>Docker Desktop</strong> running on your laptop, and a <strong>GitHub account</strong>
+you are signed into.</p>
+<div class="callout"><p><strong>How to use this lab:</strong> read each task, try to build the answer yourself, and
+open the hint only if you need a nudge. The point is to <em>derive</em> it, not to
+copy it.</p></div>
+<div class="callout"><p><strong>The server from yesterday is the target for everything today.</strong> Do not create
+a second one. If you deleted yesterday's, launch a replacement now with the same
+settings before you go any further.</p></div>
+<hr />
+<h2 id="1-fork-the-starter-then-clone-your-fork">1. Fork the starter, then clone your fork</h2>
+<p class="task"><span class="tid">1.1</span>Open the starter project on GitHub and click <strong>Fork</strong> → <strong>Create fork</strong>.
+This makes a complete copy of the project <em>under your own account</em>.</p>
+<p class="task"><span class="tid">1.2</span>In VS Code, press <code>Ctrl/Cmd + Shift + P</code>, type <strong>Git: Clone</strong>, and paste
+<strong>your fork's</strong> URL — the one with <em>your</em> username in it. Pick a folder, and say
+yes when VS Code offers to open it.</p>
+<details class="hint"><summary>Hint</summary><div class="hint-body">if you clone the original instead of your fork, everything works right up
+until your first push, which GitHub refuses — you have no write access to
+someone else's repository. The fix is to start again from 1.1, so it is worth
+checking the URL now.</div></details>
+<p class="task"><span class="tid">1.3</span>Open a terminal inside VS Code (<strong>Terminal → New Terminal</strong>) and run the
+project locally:</p>
+<pre><code class="language-bash">npm install
+npm run dev
+</code></pre>
+<p><code>Ctrl/Cmd + Click</code> the <code>http://localhost:5173</code> link it prints. That is your badge.
+The photo booth works here because browsers treat <code>localhost</code> as secure.</p>
+<hr />
+<h2 id="2-make-the-badge-yours-then-push-it">2. Make the badge yours, then push it</h2>
+<p class="task"><span class="tid">2.1</span>Open <code>src/App.tsx</code>. At the very top is the <code>CONFIG</code> block — the only
+part you need to touch. Change the name, the fun fact and the colours to your own,
+and save. The browser updates instantly.</p>
+<p class="task"><span class="tid">2.2</span>Push it to your fork, without using the terminal:</p>
+<ol>
+<li>Click the <strong>Source Control</strong> icon in the left sidebar.</li>
+<li>Type a short message — <code>Make the badge mine</code> — and click <strong>✓ Commit</strong>.</li>
+<li>Click <strong>Sync Changes</strong>. The first time, VS Code asks you to sign in to GitHub
+in the browser; approve it.</li>
+</ol>
+<details class="hint"><summary>Hint</summary><div class="hint-body"><strong>✓ Commit</strong> is <code>git add</code> and <code>git commit</code> in one click. <strong>Sync Changes</strong>
+is <code>git push</code>. Those are three of the four verbs from the slides.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> your commit went to your fork, not to the original project.
+Why does that matter for what you are about to build this afternoon?</p>
+<hr />
+<h2 id="3-hisham-s-mystery-container">3. Hisham's mystery container</h2>
+<p>Hisham installed Docker and started a container someone handed him, and has no
+idea what is running inside it. Help him investigate with the commands from the
+session.</p>
+<p class="task"><span class="tid">3.1</span>Fill in the blanks. Run this <strong>on your server</strong>, over SSH — you will
+install Docker there in section 4, so come back to this if you are working ahead.</p>
+<pre><code class="language-bash"># 1. Run the official nginx web server, name it &quot;web&quot;,
+#    map host port 8080 → container port 80
+docker run -d --name web -p ____:____ nginx
+
+# 2. List running containers — is &quot;web&quot; there?
+docker ____
+
+# 3. Open a shell inside the running container, then look around
+docker exec -it web ____
+#   (inside)  ls /usr/share/nginx/html
+#   (inside)  exit
+
+# 4. Check it serves a page, from the server itself
+curl http://localhost:8080
+
+# 5. Clean up
+docker stop web &amp;&amp; docker rm web
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body"><code>docker run</code> starts it, <code>docker ps</code> lists what is running, and
+<code>docker exec -it &lt;name&gt; sh</code> drops you inside. Only one of the two port numbers
+is yours to choose — nginx always listens on 80 inside the image.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> you never installed nginx on your server. So where did it
+come from, and what is left behind on the server after step 5?</p>
+<hr />
+<h2 id="4-install-docker-on-your-server">4. Install Docker on your server</h2>
+<h3>🏆 Milestone 3 — your project and Docker, on the server</h3>
+<p class="task"><span class="tid">4.1</span>SSH in:</p>
+<pre><code class="language-bash">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;
+</code></pre>
+<p class="task"><span class="tid">4.2</span>Install Docker and confirm it:</p>
+<pre><code class="language-bash">curl -fsSL https://get.docker.com | sh
+docker --version
+</code></pre>
+<p class="task"><span class="tid">4.3</span>Now complete section 3 right here on the server.</p>
+<h3>✅ You have finished Milestone 3 when</h3>
+<ul>
+<li>Your personalised badge is in <strong>your own public GitHub repo</strong></li>
+<li><code>docker --version</code> works on the server</li>
+<li>You ran, <code>exec</code>-ed into, and cleaned up the nginx container</li>
+</ul>
+<hr />
+<h2 id="5-complete-the-dockerfile">5. Complete the Dockerfile</h2>
+<p>The starter project has a <code>Dockerfile</code> with the key lines blanked out. Everything
+you need, you already learned.</p>
+<pre><code class="language-dockerfile"># ---- Stage 1: build the static site ----
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN ______                                     # install dependencies cleanly
+COPY . .
+RUN npm run build                              # produces the site in /app/dist
+
+# ---- Stage 2: serve it over HTTPS with Caddy ----
+FROM caddy:2-alpine
+COPY --from=______ /app/dist /usr/share/caddy   # copy from WHICH stage?
+COPY Caddyfile /etc/caddy/Caddyfile
+EXPOSE ______ ______                            # the two ports HTTPS needs
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">the clean install command for a project that has a <code>package-lock.json</code>
+is <code>npm ci</code>. The first stage was given a name — look at the <code>AS</code>. And HTTPS
+needs the same two ports you are about to open in the security group.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> stage 1 installs hundreds of megabytes of build tools. How
+much of that ends up on your server, and why?</p>
+<hr />
+<h2 id="6-build-push-pull-run-by-hand">6. Build, push, pull, run — by hand</h2>
+<p class="task"><span class="tid">6.1</span>Open ports <strong>80</strong> and <strong>443</strong> in your instance's security group
+(Alibaba console → your instance → Security Groups → add inbound rules). Caddy
+needs 80 to prove you own the name, and 443 to serve the site. Day 3 explains
+what you just did.</p>
+<p class="task"><span class="tid">6.2</span>Create a free account at <code>hub.docker.com</code>, then sign in from <strong>Docker
+Desktop</strong> (top right). The CLI reuses that login.</p>
+<p class="task"><span class="tid">6.3</span>On <strong>your own machine</strong>, build and push:</p>
+<pre><code class="language-bash">docker build --platform linux/amd64 -t &lt;your-dockerhub-username&gt;/cloud-explorer .
+docker push ______/cloud-explorer
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body"><code>--platform linux/amd64</code> matters if you are on an Apple Silicon Mac —
+your laptop builds ARM images by default and your server is x86. Without it the
+container refuses to start on the server with an exec-format error.</div></details>
+<p class="task"><span class="tid">6.4</span>On <strong>your server</strong>, pull it and run it. The site serves at your IP with
+the dots turned into dashes, plus <code>.sslip.io</code>:</p>
+<pre><code class="language-bash">docker pull &lt;your-dockerhub-username&gt;/cloud-explorer
+
+docker run -d -p 80:80 -p 443:443 \
+  -e SITE_ADDRESS=______.sslip.io \
+  --name cloud-explorer &lt;your-dockerhub-username&gt;/cloud-explorer
+</code></pre>
+<p class="task"><span class="tid">6.5</span>Open <code>https://&lt;your-ip-with-dashes&gt;.sslip.io</code> in a browser. You should
+see your badge, a trusted padlock, and a working photo booth. <strong>Your app is live
+on the internet.</strong> 🎉</p>
+<details class="hint"><summary>Hint</summary><div class="hint-body"><code>-e SITE_ADDRESS=...</code> sets an environment variable inside the container —
+the same concept from Day 1. Caddy reads it to know which hostname to request a
+certificate for. If the certificate does not appear, port 80 is usually still
+closed.</div></details>
+<hr />
+<h2 id="7-feel-the-pain-then-remove-it">7. Feel the pain, then remove it</h2>
+<p class="task"><span class="tid">7.1</span>Change <code>gradientColors</code> in <code>CONFIG</code> to different colours. Now get that
+one line onto the internet, by hand: commit and push, rebuild the image, push it
+to Docker Hub, SSH in, pull, remove the old container, run the new one.</p>
+<p>That is seven steps for one line. Do it once, deliberately, so the rest of this
+section means something.</p>
+<p class="task"><span class="tid">7.2</span>Add six repository secrets. In your GitHub repo: <strong>Settings → Secrets
+and variables → Actions → New repository secret</strong>.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+  <th>Secret</th>
+  <th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>DOCKERHUB_USERNAME</code></td>
+  <td>your Docker Hub username</td>
+</tr>
+<tr>
+  <td><code>DOCKERHUB_TOKEN</code></td>
+  <td>Docker Hub → Account Settings → Security → New Access Token</td>
+</tr>
+<tr>
+  <td><code>SSH_HOST</code></td>
+  <td>your server's public IP (the EIP)</td>
+</tr>
+<tr>
+  <td><code>SSH_USER</code></td>
+  <td><code>root</code>, or your login user</td>
+</tr>
+<tr>
+  <td><code>SSH_KEY</code></td>
+  <td>the contents of your private <code>.pem</code> file</td>
+</tr>
+<tr>
+  <td><code>SITE_ADDRESS</code></td>
+  <td>your <code>&lt;ip-with-dashes&gt;.sslip.io</code></td>
+</tr>
+</tbody>
+</table></div>
+<details class="hint"><summary>Hint</summary><div class="hint-body">Docker Hub shows the access token exactly once. Copy it straight into
+GitHub before you close the tab, or create another one.</div></details>
+<p class="task"><span class="tid">7.3</span>The project has <code>.github/workflows/deploy.yml</code> with the important lines
+blanked. Fill them in.</p>
+<pre><code class="language-yaml">on:
+  push:
+    branches: [______]              # which branch triggers a deploy?
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.______ }}    # which secret holds the token?
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/cloud-explorer:latest
+
+  deploy:
+    needs: ______                   # this job must wait for which job?
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and redeploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            docker rm -f cloud-explorer || true
+            docker run -d --pull ______ -p 80:80 -p 443:443 \
+              -e SITE_ADDRESS=${{ secrets.______ }} \
+              --name cloud-explorer ${{ secrets.DOCKERHUB_USERNAME }}/cloud-explorer:latest
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body">the trigger is a <code>push</code> to <code>main</code>. The second job must wait for the first,
+or it deploys an image that does not exist yet. And <code>--pull</code> needs the value that
+always fetches the freshest image — without it, <code>docker run</code> happily restarts the
+old one and your site silently serves yesterday's code.</div></details>
+<hr />
+<h2 id="8-finish-line">8. Finish line</h2>
+<h3>🏆 Milestone 4 — from &quot;push code&quot; to &quot;it's live&quot;, automatically</h3>
+<p class="task"><span class="tid">8.1</span>Commit both completed files, the <code>Dockerfile</code> and <code>deploy.yml</code>.</p>
+<p class="task"><span class="tid">8.2</span>Change <code>gradientColors</code> again, flip <code>isOnCloud</code> to <code>true</code>, then commit
+and push from VS Code.</p>
+<p class="task"><span class="tid">8.3</span>Open the <strong>Actions</strong> tab in your repo and watch both jobs run. When they
+go green, refresh <code>https://&lt;your-ip-with-dashes&gt;.sslip.io</code>.</p>
+<p><strong>New colours. And you did nothing but push.</strong> 🚀</p>
+<h3>✅ You have finished Milestone 4 when</h3>
+<ul>
+<li>Your badge is live over HTTPS on your server</li>
+<li>Pushing a change to <code>main</code> redeploys it automatically, with a green check in
+the Actions tab</li>
+</ul>
+<h3>🌥️ Fallback</h3>
+<p>No cloud tenant? You can still complete all three fill-in tasks and build and run
+the image locally with Docker Desktop, which proves the whole mechanism.</p>
+<h3>Tomorrow</h3>
+<p>You opened ports 80 and 443 on faith today. Day 3 explains exactly what a port, a
+subnet and a security group are — and why your server was reachable at all.</p>
+
+</main>
+</div>
+
+<footer>
+  <div class="foot">
+    <span class="slogan">Majal · Unlocking your tech horizons</span>
+    <span>Cloud Computing 2026</span>
+  </div>
+</footer>
+<script>
+/* Highlight the section you're reading in the contents rail. */
+(function () {
+  var links = {}, heads = [];
+  document.querySelectorAll('.toc a').forEach(function (a) {
+    var el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+    if (el) { links[el.id] = a; heads.push(el); }
+  });
+  var current = null;
+  function sync() {
+    var best = null;
+    heads.forEach(function (h) {
+      if (h.getBoundingClientRect().top < 140) best = h;
+    });
+    if (best === current) return;
+    if (current) links[current.id].style.color = '';
+    current = best;
+    if (current) links[current.id].style.color = 'var(--petrol)';
+  }
+  addEventListener('scroll', sync, { passive: true });
+  sync();
+})();
+</script>
+</body>
+</html>

@@ -3,16 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Majal — Cloud Computing Day 2: Day 2 title</title>
+  <title>Majal — Cloud Computing Day 2: The first deploy</title>
   <link rel="stylesheet" href="../shared/dist/reset.css">
   <link rel="stylesheet" href="../shared/dist/reveal.css">
   <link rel="stylesheet" href="../shared/css/course.css?v=1">
   <style>
-    /* ---- day-specific slide layouts live here, NOT in course.css --------
-       Build them out of the brand kernel's .card / .callout / var(--petrol)
-       so a new grid still reads as the same deck.  Common ones: */
+    /* ---- day 2 layouts — built from the brand kernel, never added to course.css ---- */
 
-    /* card grid — the workhorse concept slide */
     .k2 { display: grid; gap: 14px; margin-top: .3em; }
     .k2.c2 { grid-template-columns: 1fr 1fr; }
     .k2.c3 { grid-template-columns: repeat(3,1fr); }
@@ -25,7 +22,6 @@
       border-top: 1px dashed var(--line); padding-top: .45em; }
     .k2 .card .ex b { color: var(--petrol); font-weight: 700; }
 
-    /* pipeline / stage strip — a process with N stages, side by side */
     .pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: .55em;
       border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
     .pipe .stg { padding: .75em .85em; border-right: 1px solid var(--line); background: var(--panel); }
@@ -38,47 +34,585 @@
       display: flex; flex-wrap: wrap; gap: .28em; }
     .pipe .stg .tools span { font-family: var(--mono); font-size: .5em; font-weight: 700; letter-spacing: .04em;
       background: rgba(0,86,125,.09); color: var(--petrol); border-radius: 999px; padding: .28em .65em; }
+
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-top: .4em; }
+    .two.wide-l { grid-template-columns: 1.25fr .75fr; }
+    .two.wide-r { grid-template-columns: .8fr 1.2fr; }
+
+    .card.alt { border-top-color: var(--muted); }
+    .card ul { margin: .2em 0 0; padding-left: 1.1em; }
+    .card li { font-size: .64em; color: var(--muted); line-height: 1.55; margin-bottom: .2em; }
+    .card li b { color: var(--petrol); }
+
+    .rule p { margin: 0; }
+    .rule b { color: var(--petrol); }
+    .steps .rule { margin: .45em 0; font-size: .74em; }
+    .fill { color: var(--bad); font-weight: 700; }
+    .cmt { color: #7f9aa3; }
+    /* the fill-in-the-blank listings are long — the kernel's .codeblock size
+       overflows the 720 px canvas on those three slides */
+    .codeblock.sm { font-size: .46em; line-height: 1.5; }
+
+    /* a compact command reference */
+    .cmds { width: 100%; border-collapse: collapse; font-size: .6em; margin-top: .4em; }
+    .cmds td { padding: .4em .6em; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .cmds td:first-child { font-family: var(--mono); font-weight: 700; color: var(--petrol);
+      white-space: nowrap; width: 44%; }
+    .cmds td:last-child { color: var(--muted); }
+    .cmds tr:last-child td { border-bottom: 0; }
+
+    .secrets { width: 100%; border-collapse: collapse; font-size: .58em; margin-top: .4em; }
+    .secrets td { padding: .36em .6em; border-bottom: 1px solid var(--line); }
+    .secrets td:first-child { font-family: var(--mono); font-weight: 700; color: var(--petrol); width: 40%; }
+    .secrets td:last-child { color: var(--muted); }
+    .secrets tr:last-child td { border-bottom: 0; }
+
+    /* Partner lockup — sccc guidelines 04.3 "led by a third party":
+       lead logotype 100%, rectangular sccc endorsement 60% of its height. */
+    .partners { display: flex; align-items: center; gap: 28px; margin-top: 1.5em;
+      border-top: 1px solid var(--line); padding-top: .7em; }
+    .partners .plabel { font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--muted); }
+    .partners img.azm  { height: 60px; width: auto; }
+    .partners img.sccc { height: 36px; width: auto; }
+    .partners.sm { margin-top: .7em; padding-top: .5em; gap: 20px; }
+    .partners.sm img.azm  { height: 40px; }
+    .partners.sm img.sccc { height: 24px; }
+
+    /* Back to the course landing page. The brandmark is pointer-events:none,
+       so the link has to opt back in. */
+    .brandmark .backlink { pointer-events: auto; font-family: var(--mono); font-size: 11px;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none;
+      border: 1px solid var(--line); border-radius: 3px; padding: .4em .75em; background: #fff;
+      transition: color .12s, border-color .12s; }
+    .brandmark .backlink:hover { color: var(--petrol); border-color: var(--petrol); }
   </style>
 </head>
 <body>
 <div class="reveal">
   <div class="slides">
 
-    <!-- ================= TITLE ================= -->
-    <section>
-      <p class="kicker">Day 2 · Day 2 title</p>
-      <h1>A sentence that states<br>today's real question.</h1>
-      <p class="sub" style="margin-top:1.2em;max-width:27em">Two or three lines that name what changes for the
-      learner today and what they will be able to do by the end. Not an agenda — a promise.</p>
-      <aside class="notes">Presenter: how to open, what to land in the first two minutes, what NOT to let this
-      become.</aside>
-    </section>
+    <!-- ============================================================ SESSION 1 -->
 
-    <!-- ================= FOUNDATIONS ================= -->
-    <!-- A BLOCK of slides, not a token on-ramp. List what the rest of the day
-         silently assumes, then teach each load-bearing piece. -->
     <section>
-      <p class="kicker">Foundations · the substrate</p>
-      <h2>The model everything today rests on</h2>
-      <div class="k2 c3">
-        <div class="card"><h3>Piece one <span class="tag">term</span></h3>
-          <p>What it is, in the learner's language.</p>
-          <span class="ex">Concretely: <b>a worked example</b>.</span></div>
-        <div class="card"><h3>Piece two <span class="tag">term</span></h3><p>…</p></div>
-        <div class="card"><h3>Piece three <span class="tag">term</span></h3><p>…</p></div>
+      <p class="kicker">Day 2 · Session 1 — Git essentials and running containers</p>
+      <h1>Yesterday you built the machine.<br>Today your code moves in.</h1>
+      <p class="sub" style="margin-top:1.05em;max-width:31em">Two tools stand between the project on your
+      laptop and the server you launched yesterday: <b>Git</b>, which moves code around, and <b>Docker</b>,
+      which packages it so it runs the same everywhere. By tonight your badge is live on the internet — and
+      deploying itself.</p>
+      <div class="partners">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
       </div>
-      <div class="callout" style="margin-top:.75em">The one sentence you want them to carry forward.</div>
-      <aside class="notes">Presenter notes.</aside>
+      <aside class="notes">Presenter: point back at yesterday's EIP — that same machine is the target all day.
+      Do NOT open with Docker architecture. The promise is "your thing, on the internet, by tonight".</aside>
     </section>
 
-    <!-- ================= INTERACTIVE ================= -->
     <section>
-      <p class="kicker">Section · one-line context</p>
-      <h2>A single-line title that names the mechanism</h2>
-      <iframe class="wframe" style="height:566px"
-              src="widgets/my_widget.html?v=1"
-              title="What it is" scrolling="auto"></iframe>
-      <aside class="notes">Presenter: what to click, in what order, and what the room should conclude.</aside>
+      <p class="kicker">The day · four moves</p>
+      <h2>From your laptop to a public address, in four moves</h2>
+      <div class="pipe">
+        <div class="stg"><div class="num">Move 1</div><h3>Get the project</h3>
+          <div class="q">Fork the starter, clone your fork, make the badge yours.</div>
+          <div class="tools"><span>Git</span><span>GitHub</span><span>VS Code</span></div></div>
+        <div class="stg"><div class="num">Move 2</div><h3>Run someone else's</h3>
+          <div class="q">Install Docker on the server and drive it with six commands.</div>
+          <div class="tools"><span>docker run</span><span>-p</span><span>exec</span></div></div>
+        <div class="stg"><div class="num">Move 3</div><h3>Package your own</h3>
+          <div class="q">Write the Dockerfile, build the image, push it, run it on the server.</div>
+          <div class="tools"><span>Dockerfile</span><span>Docker Hub</span><span>Caddy</span></div></div>
+        <div class="stg"><div class="num">Move 4</div><h3>Stop doing it by hand</h3>
+          <div class="q">A robot rebuilds and redeploys on every push to main.</div>
+          <div class="tools"><span>GitHub Actions</span><span>CI/CD</span></div></div>
+      </div>
+      <div class="callout" style="margin-top:.9em">Moves 1 and 2 are this morning. Moves 3 and 4 are this
+      afternoon — and move 4 is the one you will still be using in ten years.</div>
+      <aside class="notes">Presenter: this strip is the spine of the day. Come back to it before each milestone
+      so nobody loses the thread.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · version control</p>
+      <h2>Git is save-points for your code, plus a shared home online</h2>
+      <div class="two wide-l">
+        <div>
+          <p class="sub" style="font-size:.68em;max-width:none">Git tracks every change you make and syncs it
+          between computers through a site like <b>GitHub</b>. It matters here for one blunt reason: it is
+          <b>how code gets onto your server</b> — and from this afternoon, what triggers a deployment.</p>
+          <table class="cmds">
+            <tr><td>clone</td><td>Download a project from GitHub to your computer</td></tr>
+            <tr><td>add</td><td>Mark which changed files you want to save</td></tr>
+            <tr><td>commit</td><td>Save those changes as a labelled snapshot</td></tr>
+            <tr><td>push</td><td>Upload your commits to GitHub</td></tr>
+          </table>
+        </div>
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card alt"><h3>Four actions is enough</h3>
+            <p>That is the whole of Git for today. Branches, pull requests and merges come on <b>Day 5</b>,
+            when you have something worth branching.</p></div>
+          <div class="card"><h3>You will click, not type</h3>
+            <p>All four happen in <b>VS Code's Source Control panel</b> — no commands to memorise, no SSH keys
+            to configure this morning.</p>
+            <span class="ex"><b>✓ Commit</b> is add + commit in one click. <b>Sync Changes</b> is push.</span></div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: resist teaching the staging area properly. Four verbs, buttons in VS Code,
+      move on. Anyone who already knows Git can help their neighbour.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">The lab project · what you are deploying all week</p>
+      <h2>Meet the Cloud Explorer Badge — the app you make yours</h2>
+      <div class="two">
+        <div>
+          <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+            <div class="card"><h3>A small web page with your name on it</h3>
+              <p>Your colours, a fun fact, your favourite film or game, and a photo booth that uses the camera.
+              A real React app, not a toy page.</p></div>
+            <div class="card"><h3>You change one block</h3>
+              <p>Everything personal lives in a single <b class="mono">CONFIG</b> object at the top of
+              <b class="mono">src/App.tsx</b>. You never need to read the rest of the code.</p>
+              <span class="ex">Run it locally first: <b class="mono">npm install</b>, then
+              <b class="mono">npm run dev</b> → <b class="mono">localhost:5173</b>.</span></div>
+          </div>
+        </div>
+        <div class="codeblock">const CONFIG = {
+  gradientColors: [<span class="fill">"#4F46E5"</span>, "#8B5CF6"],
+  name: <span class="fill">"Your Name"</span>,
+  funFact: "I own 7 cats.",
+  isOnCloud: <span class="fill">false</span>,  <span class="cmt">// flip when live</span>
+  enablePhotoBooth: true,
+  favorite: {
+    category: "movie",
+    title: "Interstellar",
+  },
+};</div>
+      </div>
+      <aside class="notes">Presenter: open the real badge and change a colour live — Vite updates the browser
+      instantly. That five-second demo sells the whole day.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · the one Git decision that bites</p>
+      <h2>Fork first, then clone — or you will have nowhere to push</h2>
+      <div class="k2 c2">
+        <div class="card alt"><h3>Clone the starter directly <span class="tag">the trap</span></h3>
+          <p>Your copy stays pointed at <b>our</b> repository. You can commit locally all day, but the first
+          time you push, GitHub refuses — you have no write access to someone else's repo.</p>
+          <span class="ex">You find out at the worst possible moment: <b>at the end</b>.</span></div>
+        <div class="card"><h3>Fork, then clone your fork <span class="tag">do this</span></h3>
+          <p>A fork is a full copy <b>under your own account</b>. Clone that, and every commit and push this
+          week goes to a repo you own — including the one that triggers your deployments this afternoon.</p>
+          <span class="ex">On GitHub: <b>Fork</b> → <b>Create fork</b>, then copy <b>your</b> URL.</span></div>
+      </div>
+      <div class="callout hot" style="margin-top:.85em">In VS Code: <b class="mono">Ctrl/Cmd + Shift + P</b> →
+      <b class="mono">Git: Clone</b> → paste <b>your fork's</b> URL — the one with your username in it, not
+      ours.</div>
+      <aside class="notes">Presenter: walk the room here. Half the class will paste the original URL out of
+      habit, and catching it now saves twenty minutes at Milestone 3.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Containers · yesterday's machine vs today's package</p>
+      <h2>Watch the VM side buy six copies of Ubuntu</h2>
+      <iframe class="wframe" style="height:490px"
+              src="widgets/containers.html?v=2"
+              title="VMs versus containers — stack them up and watch the cost" scrolling="no"></iframe>
+      <aside class="notes">Presenter: start at 1 app and ask which side wins — it looks like a tie, and that is
+      the honest answer at one app. Then drag to 6. Land: the container side pays for the kernel ONCE. Do not
+      let this become "containers are always better" — the VM is still what you rented.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Containers · two words people mix up</p>
+      <h2>An image is the recipe; a container is the dish you cooked</h2>
+      <div class="k2 c2">
+        <div class="card"><h3>Image <span class="tag">the recipe</span></h3>
+          <p>A frozen, read-only package of your app and everything it needs. It does not run. You build it
+          once, push it to a registry, and pull it anywhere.</p>
+          <span class="ex">One image → <b>many</b> containers, on many machines.</span></div>
+        <div class="card"><h3>Container <span class="tag">the dish</span></h3>
+          <p>A running instance of an image. Start it, stop it, throw it away, start another — the image it
+          came from never changes.</p>
+          <span class="ex"><b class="mono">docker run</b> turns a recipe into a dish.</span></div>
+      </div>
+      <div class="callout hot" style="margin-top:.9em">⚠️ <b>"Image" now means two different things this
+      week.</b> Yesterday's image was the <b>operating-system template</b> you picked for your ECS instance.
+      Today's image is a <b>packaged application</b>. Same word, different layer.</div>
+      <aside class="notes">Presenter: this collision genuinely confuses people on day 2. Say it out loud once,
+      then use "OS image" and "container image" for the rest of the week.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Containers · the commands you will use every day</p>
+      <h2>Six commands run every container you meet this week</h2>
+      <div class="two wide-l">
+        <div>
+          <table class="cmds">
+            <tr><td>docker run &lt;image&gt;</td><td>Start a container from an image</td></tr>
+            <tr><td>docker run -p 8080:80 …</td><td>Map port 8080 on the host → port 80 in the container</td></tr>
+            <tr><td>docker run -v /host:/data …</td><td>Mount a host folder — a <b>v</b>olume — inside it</td></tr>
+            <tr><td>docker ps</td><td>List running containers</td></tr>
+            <tr><td>docker exec -it &lt;name&gt; sh</td><td>Open a shell <i>inside</i> a running container</td></tr>
+            <tr><td>docker stop &lt;name&gt;</td><td>Stop it</td></tr>
+          </table>
+        </div>
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card"><h3><span class="mono">-d</span> runs it detached</h3>
+            <p>Without <b class="mono">-d</b> the container holds your terminal hostage. With it, it runs in
+            the background and you get your prompt back.</p></div>
+          <div class="card"><h3><span class="mono">exec</span> is your window in</h3>
+            <p>A container is not a black box. <b class="mono">exec -it … sh</b> drops you inside with the same
+            <b class="mono">ls</b> and <b class="mono">cd</b> you learned yesterday.</p>
+            <span class="ex">Type <b class="mono">exit</b> to come back out.</span></div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: everything here is yesterday's shell knowledge pointed at a new target.
+      Say that — it makes containers feel less like a new universe.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Containers · the flag everyone gets backwards</p>
+      <h2>Send a request and watch exactly where it dies</h2>
+      <iframe class="wframe" style="height:495px"
+              src="widgets/ports.html?v=2"
+              title="-p host:container — send a request and watch where it lands" scrolling="no"></iframe>
+      <aside class="notes">Presenter: run it once mapped correctly, then flip to <b>-p 80:8080</b> and send
+      again — the packet crosses the wall and dies at a port nothing listens on. Land the rule out loud: host
+      first, container second, and the container's port is decided by the image, not by you. Press "no -p"
+      once too: a running container nobody can reach is the most common day-2 bug.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · Hisham's mystery container</p>
+      <h2>Fill the blanks and find out what is running inside</h2>
+      <p class="sub" style="font-size:.64em;max-width:none;margin-bottom:.2em">Hisham started a container
+      someone handed him and has no idea what is in it. Run this <b>on your server</b>, over SSH.</p>
+      <div class="codeblock sm"><span class="cmt"># 1. Run nginx, name it "web", map host 8080 → container 80</span>
+docker run -d --name web -p <span class="fill">____</span>:<span class="fill">____</span> nginx
+
+<span class="cmt"># 2. List running containers — is "web" there?</span>
+docker <span class="fill">____</span>
+
+<span class="cmt"># 3. Open a shell inside it, then look around</span>
+docker exec -it web <span class="fill">____</span>
+<span class="cmt">#   (inside)  ls /usr/share/nginx/html   →  then: exit</span>
+
+<span class="cmt"># 4. Check it serves a page, from the server itself</span>
+curl http://localhost:8080
+
+<span class="cmt"># 5. Clean up</span>
+docker stop web &amp;&amp; docker rm web</div>
+      <aside class="notes">Presenter: let them try before hinting. The one hint worth giving: nginx serves on
+      80 inside, always — so only one of the two numbers is yours to choose.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">🏆 Milestone 3 · your project and Docker, on the server</p>
+      <h2>Code on GitHub, Docker running on your machine in the cloud</h2>
+      <div class="steps">
+        <div class="rule"><span class="n">1</span><p>Your personalised badge is pushed to <b>your own
+          fork</b>.</p></div>
+        <div class="rule"><span class="n">2</span><p>SSH into yesterday's server:
+          <b class="mono">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;</b></p></div>
+        <div class="rule"><span class="n">3</span><p>Install Docker on it:
+          <b class="mono">curl -fsSL https://get.docker.com | sh</b>, then confirm with
+          <b class="mono">docker --version</b>.</p></div>
+        <div class="rule"><span class="n">4</span><p>Complete Hisham's task <b>on the server</b>, to prove
+          Docker really works there.</p></div>
+      </div>
+      <div class="ackbox"><input type="checkbox" aria-label="milestone 3 complete">
+        <div>Badge in your own public GitHub repo · <b class="mono">docker --version</b> works on the server ·
+        you ran, <b class="mono">exec</b>-ed into, and cleaned up the nginx container.</div></div>
+      <aside class="notes">Presenter: the curl-pipe-to-shell install deserves one sentence — you are trusting
+      get.docker.com. That is a real decision, and Day 3 comes back to trust.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Session 1 · done</p>
+      <h2>You can push a real project and run containers on your own server</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>Git, four verbs deep</h3><p>Fork, clone, commit, push — through VS Code, into a
+          repository you own.</p></div>
+        <div class="card"><h3>Containers, driven</h3><p>You ran someone else's image, published a port, opened
+          a shell inside it, and cleaned up after yourself.</p></div>
+        <div class="card"><h3>After the break</h3><p>You package <b>your own</b> app into an image, put it live
+          over HTTPS, and then make it deploy itself.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.9em">🎮 <b>Kahoot:</b> Day 2 · Session 1 — Git basics, VM vs
+      container, images vs containers, ports, and <b class="mono">exec</b>.</div>
+      <aside class="notes">Presenter: end on "your own app" — the afternoon is the payoff and they should walk
+      to lunch knowing it.</aside>
+    </section>
+
+    <!-- ============================================================ SESSION 2 -->
+
+    <section>
+      <p class="kicker">Day 2 · Session 2 — build it, deploy it, then never do that again</p>
+      <h1>You can run other people's containers.<br>Now package your own.</h1>
+      <p class="sub" style="margin-top:1.05em;max-width:31em">This is the session where your badge goes live —
+      a real HTTPS address, a real padlock, a working camera. Then you will feel exactly why nobody deploys by
+      hand for long, and you will fix it before you leave.</p>
+      <aside class="notes">Presenter: promise the padlock. For most of the room it is the moment of the
+      week.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">The Dockerfile · a recipe with two phases</p>
+      <h2>Build the site with Node, then serve it with something tiny</h2>
+      <div class="k2 c2">
+        <div class="card"><h3>Phase 1 — build <span class="tag">node:22-alpine</span></h3>
+          <p>Install dependencies, compile the React app, produce a folder of finished HTML, CSS and JavaScript
+          in <b class="mono">/app/dist</b>.</p>
+          <span class="ex">Needs the whole Node toolchain. Needed <b>once</b>.</span></div>
+        <div class="card"><h3>Phase 2 — serve <span class="tag">caddy:2-alpine</span></h3>
+          <p>Take those finished files and serve them over HTTPS. No Node, no compiler, no
+          <b class="mono">node_modules</b> — a web server and a folder.</p>
+          <span class="ex">This is the <b>only</b> phase that ships to your server.</span></div>
+      </div>
+      <div class="callout" style="margin-top:.9em">Two phases means <b class="mono">FROM</b> appears
+      <b>twice</b> in one file. That is a <b>multi-stage build</b> — and the next slide shows what it
+      saves.</div>
+      <aside class="notes">Presenter: do not explain multi-stage in prose here. Set up the two phases and let
+      the widget do the reveal.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">The Dockerfile · what actually ships</p>
+      <h2>Throw the workshop away and post only the parcel</h2>
+      <iframe class="wframe" style="height:500px"
+              src="widgets/multistage.html?v=2"
+              title="Multi-stage build — what actually ships" scrolling="no"></iframe>
+      <aside class="notes">Presenter: press Build on multi-stage first (46 MB), then switch to single stage
+      (336 MB) — same app. Then the important one: switch COPY to <b>/app</b> and watch it balloon back to
+      260 MB. Land that multi-stage saves nothing by itself; what you carry across is the whole trick.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · complete the Dockerfile</p>
+      <h2>Four blanks, and you have already learned all four</h2>
+      <div class="codeblock sm"><span class="cmt"># ---- Stage 1: build the static site ----</span>
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN <span class="fill">______</span>                     <span class="cmt"># install dependencies cleanly</span>
+COPY . .
+RUN npm run build                     <span class="cmt"># produces /app/dist</span>
+
+<span class="cmt"># ---- Stage 2: serve it over HTTPS with Caddy ----</span>
+FROM caddy:2-alpine
+COPY --from=<span class="fill">______</span> /app/dist /usr/share/caddy
+COPY Caddyfile /etc/caddy/Caddyfile
+EXPOSE <span class="fill">______</span> <span class="fill">______</span>                 <span class="cmt"># the two ports HTTPS needs</span></div>
+      <div class="callout" style="margin-top:.6em">Hints: a clean install when a
+      <b class="mono">package-lock.json</b> exists is <b class="mono">npm ci</b>. The first stage was given a
+      name — look at the <b class="mono">AS</b>.</div>
+      <aside class="notes">Presenter: make them try before checking against the finished Dockerfile in the
+      repo. EXPOSE is the one they get wrong — ask why 80 is needed at all if the site is HTTPS.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · why this app insists on HTTPS</p>
+      <h2>The camera will not open on a plain http:// address</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>The browser blocks it</h3>
+          <p>Camera and microphone are privileged. Browsers hand them over only on a <b>secure origin</b> —
+          HTTPS, or <b class="mono">localhost</b>. That is why the photo booth worked on your laptop.</p></div>
+        <div class="card"><h3>Caddy gets the certificate</h3>
+          <p>A tiny web server that fetches a real, trusted certificate automatically and renews it. No
+          purchase, no manual setup — but it must be reachable to prove you own the name.</p></div>
+        <div class="card"><h3>sslip.io gives you the name</h3>
+          <p>You have an IP, not a domain. <b class="mono">47-253-1-100.sslip.io</b> resolves straight back to
+          <b class="mono">47.253.1.100</b> — free, instant, no DNS to configure.</p>
+          <span class="ex">Your IP, with dots turned into <b>dashes</b>.</span></div>
+      </div>
+      <div class="callout hot" style="margin-top:.85em">⚠️ <b>Open ports 80 and 443</b> in your instance's
+      security group now (Alibaba console → your instance → Security Groups → inbound rules). Caddy needs 80 to
+      prove ownership and 443 to serve. <i>Do it now, understand it Thursday.</i></div>
+      <aside class="notes">Presenter: be honest that the security group is a Day 3 topic they are taking on
+      faith — the same deal as Git yesterday. Naming the debt keeps trust.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Docker Hub · somewhere both machines can reach</p>
+      <h2>Your image needs an address of its own</h2>
+      <div class="two wide-l">
+        <div>
+          <p class="sub" style="font-size:.66em;max-width:none">Right now your image exists on exactly one
+          machine: the laptop that built it. Your server cannot see it, and on Day 4 a Kubernetes cluster will
+          not either. It needs to live somewhere both can pull from — a <b>container registry</b>.</p>
+          <div class="k2" style="grid-template-columns:1fr;margin-top:.45em">
+            <div class="card"><h3>Docker Hub is the default one</h3>
+              <p>Free account, public images. Sign in from <b>Docker Desktop</b> and the CLI reuses that
+              login — no <b class="mono">docker login</b> in the terminal.</p>
+              <span class="ex">Your image becomes <b class="mono">&lt;username&gt;/cloud-explorer</b>.</span></div>
+          </div>
+        </div>
+        <div class="codeblock"><span class="cmt"># on YOUR machine</span>
+docker build \
+  --platform linux/amd64 \
+  -t <span class="fill">&lt;user&gt;</span>/cloud-explorer .
+
+docker push <span class="fill">&lt;user&gt;</span>/cloud-explorer</div>
+      </div>
+      <div class="callout" style="margin-top:.7em"><b class="mono">--platform linux/amd64</b> matters on an
+      Apple Silicon Mac: your laptop builds ARM images by default and your server is x86. Skip it and the
+      container refuses to start with an exec-format error.</div>
+      <aside class="notes">Presenter: the platform flag saves the M-series half of the room twenty minutes of
+      confusion. Say it even if nobody asks.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">By hand · the deploy that works</p>
+      <h2>Pull it on the server, run it, and open the padlock</h2>
+      <div class="codeblock"><span class="cmt"># on YOUR SERVER, over SSH</span>
+docker pull &lt;user&gt;/cloud-explorer
+
+docker run -d -p 80:80 -p 443:443 \
+  -e SITE_ADDRESS=<span class="fill">47-253-1-100</span>.sslip.io \   <span class="cmt"># your IP, with dashes</span>
+  --name cloud-explorer &lt;user&gt;/cloud-explorer</div>
+      <div class="k2 c2" style="margin-top:.7em">
+        <div class="card"><h3>Yesterday's environment variable, doing real work</h3>
+          <p><b class="mono">-e SITE_ADDRESS=…</b> sets an environment variable <i>inside</i> the container —
+          exactly the concept from Day 1. Caddy reads it to know which hostname to request a certificate
+          for.</p></div>
+        <div class="card"><h3>Then open it</h3>
+          <p><b class="mono">https://&lt;ip-with-dashes&gt;.sslip.io</b> — your badge, a trusted padlock, and a
+          working photo booth. <b>That is your app on the internet.</b> 🌍</p></div>
+      </div>
+      <aside class="notes">Presenter: put one student's URL on the projector. Everyone else will race to get
+      theirs up, and that race is the best part of the day.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">The pain point 😩</p>
+      <h2>Now change one colour and ship it again</h2>
+      <p class="sub" style="font-size:.7em;max-width:34em">You edited <b class="mono">gradientColors</b>. One
+      line. To get that line onto the internet, by hand, you now do <b>all of this</b> — and then do it again
+      for the next one-line change, and the one after that.</p>
+      <div class="codeblock">commit + push  →  docker build  →  docker push  →  ssh in  →
+docker pull  →  docker rm -f  →  docker run       <span class="cmt"># every. single. time.</span></div>
+      <div class="callout hot" style="margin-top:.85em">Seven steps, about three minutes of your attention, and
+      one of them is easy to forget at 5pm on a Thursday. Forget the wrong one and the site looks fine while
+      serving yesterday's code.</div>
+      <aside class="notes">Presenter: do NOT reveal which step is the dangerous one — the next slide lets them
+      find out by skipping it. Ask the room to guess first.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">CI/CD · do it yourself, or let the robot do it</p>
+      <h2>Skip one step and see what your visitors get</h2>
+      <iframe class="wframe" style="height:520px"
+              src="widgets/pipeline.html?v=1"
+              title="Deploy it yourself, or let the robot do it" scrolling="no"></iframe>
+      <aside class="notes">Presenter: make someone deploy by hand and deliberately skip <b>docker pull</b>.
+      Everything goes green, the site is up, the colours are old — that silent failure is the argument for
+      CI/CD, not the time saved. Then switch to GitHub Actions and press push once.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">CI/CD · what the robot needs to know</p>
+      <h2>Six secrets, so none of it ever sits in your code</h2>
+      <div class="two wide-r">
+        <div>
+          <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+            <div class="card"><h3>GitHub Actions is the robot</h3>
+              <p>It runs steps you define whenever something happens — here, a <b>push to main</b>. The steps
+              are the same commands you just ran by hand.</p></div>
+            <div class="card alt"><h3>Secrets, not source</h3>
+              <p>Your private key and registry token go in <b>Settings → Secrets and variables → Actions</b>,
+              never in the repository. The workflow reads them as
+              <b class="mono">${{ secrets.NAME }}</b>.</p></div>
+          </div>
+        </div>
+        <table class="secrets">
+          <tr><td>DOCKERHUB_USERNAME</td><td>your Docker Hub username</td></tr>
+          <tr><td>DOCKERHUB_TOKEN</td><td>Docker Hub → Account Settings → Security → New Access Token</td></tr>
+          <tr><td>SSH_HOST</td><td>your server's public IP (the EIP)</td></tr>
+          <tr><td>SSH_USER</td><td><span class="mono">root</span>, or your login user</td></tr>
+          <tr><td>SSH_KEY</td><td>the contents of your private <span class="mono">.pem</span> file</td></tr>
+          <tr><td>SITE_ADDRESS</td><td>your <span class="mono">&lt;ip-with-dashes&gt;.sslip.io</span></td></tr>
+        </table>
+      </div>
+      <aside class="notes">Presenter: Docker Hub shows the access token exactly once — tell them to paste it
+      into GitHub immediately. Half the support questions this afternoon are a lost token.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · complete the deploy pipeline</p>
+      <h2>Five blanks turn seven manual steps into one git push</h2>
+      <div class="codeblock sm">on:
+  push:
+    branches: [<span class="fill">______</span>]          <span class="cmt"># which branch deploys?</span>
+
+jobs:
+  build-and-push:
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.<span class="fill">______</span> }}   <span class="cmt"># which secret?</span>
+      - uses: docker/build-push-action@v7
+
+  deploy:
+    needs: <span class="fill">______</span>               <span class="cmt"># wait for which job?</span>
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          script: |
+            docker rm -f cloud-explorer || true
+            docker run -d --pull <span class="fill">______</span> -p 80:80 -p 443:443 \
+              -e SITE_ADDRESS=${{ secrets.<span class="fill">______</span> }} \
+              --name cloud-explorer …/cloud-explorer:latest</div>
+      <aside class="notes">Presenter: point at <b class="mono">--pull always</b> and connect it straight back
+      to the widget — this single word is the fix for the failure they just caused by hand.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">🏆 Milestone 4 · from "push code" to "it's live", automatically</p>
+      <h2>Change a colour, push, and watch it deploy itself</h2>
+      <div class="steps">
+        <div class="rule"><span class="n">1</span><p>Complete and commit both tasks — the
+          <b class="mono">Dockerfile</b> and <b class="mono">.github/workflows/deploy.yml</b>.</p></div>
+        <div class="rule"><span class="n">2</span><p>Confirm the badge is live <b>by hand</b> at least
+          once.</p></div>
+        <div class="rule"><span class="n">3</span><p>Add all <b>six repository secrets</b> — create the Docker
+          Hub access token first, and paste it into GitHub before you close the tab.</p></div>
+        <div class="rule"><span class="n">4</span><p>Change <b class="mono">gradientColors</b>, flip
+          <b class="mono">isOnCloud</b> to <b class="mono">true</b>, then commit and push from VS Code.</p></div>
+        <div class="rule"><span class="n">5</span><p>Watch both jobs go green in the <b>Actions</b> tab, then
+          refresh your site. <b>New colours, and you did nothing but push.</b></p></div>
+      </div>
+      <div class="ackbox"><input type="checkbox" aria-label="milestone 4 complete">
+        <div>Badge live over HTTPS · pushing to <b class="mono">main</b> redeploys it automatically, with a
+        green check in the Actions tab.</div></div>
+      <aside class="notes">Presenter: no cloud tenant? The fallback is real — both fill-in tasks plus a local
+      build with Docker Desktop still prove the whole mechanism.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Day 2 · done</p>
+      <h2>You built a deployment pipeline, and it works without you</h2>
+      <div class="ackbox"><input type="checkbox" aria-label="day 2 complete">
+        <div>Your badge is live over HTTPS on your own server, and a push to <b class="mono">main</b> rebuilds
+        the image, pushes it, and restarts the container — with no hands.</div></div>
+      <div class="k2 c3" style="margin-top:.8em">
+        <div class="card"><h3>This morning</h3><p>Forked and cloned a real project, made it yours, and ran
+          containers on your cloud server.</p></div>
+        <div class="card"><h3>This afternoon</h3><p>Packaged your own app into a small image, put it live over
+          HTTPS, and automated the deploy.</p></div>
+        <div class="card"><h3>Tomorrow</h3><p>You opened ports 80 and 443 on faith. Day 3 explains what a port,
+          a subnet and a security group actually are.</p></div>
+      </div>
+      <div class="partners sm">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
+      </div>
+      <aside class="notes">Presenter: end on the debt carried into tomorrow — ports opened on faith. It makes
+      Day 3 feel owed to them rather than imposed on them.</aside>
     </section>
 
   </div>
