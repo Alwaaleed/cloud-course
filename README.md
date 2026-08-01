@@ -30,6 +30,18 @@ Fixed for the whole course — do not re-map these on a later day:
 | **Blocked / refused** | red `#d64545` | a dropped packet, a rejected key, a line filtered out by grep, a clobbered file |
 | **Attention** | yellow `#f2d200` | the draggable boundary, the grep gate — the one thing on screen to grab |
 
+## Partner logos
+
+`Saudi-Azm.png` and `sccc-by-stc.png` sit at the repo root next to `MajalLogo.jpg`
+(both trimmed of their transparent padding, so a CSS `height` sizes the visible
+mark). Use the `.partners` strip — title slide, closing slide and the landing
+page carry it; the rest of the deck stays on the Majal chrome alone.
+
+Per **sccc guidelines §04.3, "led by a third party"**: the lead logotype is 100%
+and the *rectangular* sccc endorsement lockup — the one in this repo — is **60%
+of its height**. Keep that ratio if you resize. Use the POS (positive) artwork;
+the decks are light-background. NEG is only for dark slides.
+
 ## Labs
 
 ```

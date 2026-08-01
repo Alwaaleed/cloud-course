@@ -54,6 +54,28 @@
     .rule b { color: var(--petrol); }
     .steps .rule { margin: .45em 0; font-size: .74em; }
     .fill { color: var(--bad); font-weight: 700; }
+
+    /* Partner lockup — sccc guidelines 04.3 "led by a third party": the lead
+       logotype is 100%, the rectangular sccc endorsement is 60% of its height.
+       Keep the 60% ratio if you ever resize these. */
+    .partners { display: flex; align-items: center; gap: 28px; margin-top: 1.5em;
+      border-top: 1px solid var(--line); padding-top: .7em; }
+    .partners .plabel { font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--muted); }
+    .partners img.azm  { height: 60px; width: auto; }        /* lead      100% */
+    .partners img.sccc { height: 36px; width: auto; }        /* endorsed   60% */
+    .partners.sm { margin-top: .7em; padding-top: .5em; gap: 20px; }
+    .partners.sm img.azm  { height: 40px; }
+    .partners.sm img.sccc { height: 24px; }
+    .azmmark { height: 1.5em; width: auto; vertical-align: -.35em; margin-right: .4em; }
+
+    /* Back to the course landing page. The brandmark is pointer-events:none,
+       so the link has to opt back in. */
+    .brandmark .backlink { pointer-events: auto; font-family: var(--mono); font-size: 11px;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none;
+      border: 1px solid var(--line); border-radius: 3px; padding: .4em .75em; background: #fff;
+      transition: color .12s, border-color .12s; }
+    .brandmark .backlink:hover { color: var(--petrol); border-color: var(--petrol); }
   </style>
 </head>
 <body>
@@ -68,6 +90,11 @@
       <p class="sub" style="margin-top:1.1em;max-width:30em">This morning you launch a real server in a real data
       centre and give it a public address. This afternoon you stop clicking at it and start driving it from a
       terminal. Everything you deploy for the rest of the week lands on the machine you create today.</p>
+      <div class="partners">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
+      </div>
       <aside class="notes">Presenter: open by asking who has ever rented a computer they never saw. Land the
       promise — a real machine with a real address, not a simulator. Do NOT start with the pricing model or a
       vendor tour; that kills the room in the first two minutes.</aside>
@@ -143,7 +170,7 @@
       <div class="two wide-l">
         <div>
           <div class="k2 c1" style="grid-template-columns:1fr">
-            <div class="card"><h3>Saudi AZM <span class="tag">Tadawul 9534</span></h3>
+            <div class="card"><h3><img class="azmmark" src="../Saudi-Azm.png" alt="">Saudi AZM <span class="tag">Tadawul 9534</span></h3>
               <p>A leading IT company in Riyadh. Both private- and government-sector entities rely on AZM to build
               their digital solutions.</p></div>
             <div class="card"><h3>AZEM Technical <span class="tag">عازم</span></h3>
@@ -640,6 +667,11 @@ mkdir day1 &amp;&amp; cd day1</div>
       </div>
       <div class="callout hot" style="margin-top:.75em">🎮 <b>Kahoot:</b> Day 1 · Session 2 — SSH, navigation,
       permissions, pipes and redirection, environment variables.</div>
+      <div class="partners sm">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
+      </div>
       <aside class="notes">Presenter: end on the "tomorrow" card so the day closes forward, not backward.
       Remind them the server stays up all week — nobody deletes anything tonight.</aside>
     </section>
@@ -649,6 +681,6 @@ mkdir day1 &amp;&amp; cd day1</div>
 
 <script src="../shared/dist/reveal.js"></script>
 <script src="../shared/plugin/notes/notes.js"></script>
-<script src="js/state.js?v=1"></script>
+<script src="js/state.js?v=2"></script>
 </body>
 </html>

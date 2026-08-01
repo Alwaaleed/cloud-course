@@ -84,6 +84,15 @@
     .foot{max-width:1080px; margin:0 auto; padding:20px 28px; display:flex; justify-content:space-between;
       align-items:center; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--muted)}
     .foot .slogan{font-weight:700; letter-spacing:.02em; color:var(--slate)}
+
+    /* Partner lockup — sccc guidelines 04.3 "led by a third party": the lead
+       logotype is 100%, the rectangular sccc endorsement is 60% of its height. */
+    .partners{display:flex; align-items:center; gap:28px; flex-wrap:wrap;
+      margin:56px 0 0; border-top:1px solid var(--line); padding-top:20px}
+    .partners .plabel{font-size:13px; font-weight:800; letter-spacing:.24em;
+      text-transform:uppercase; color:var(--teal)}
+    .partners img.azm{height:64px; width:auto}      /* lead      100% */
+    .partners img.sccc{height:38.4px; width:auto}   /* endorsed   60% */
   </style>
 </head>
 <body>
@@ -142,6 +151,12 @@
         permissions, and write a reporting script that runs on the server itself.</p>
         <span class="status live">Available</span>
       </a>
+    </div>
+
+    <div class="partners">
+      <span class="plabel">In partnership with</span>
+      <img class="azm"  src="Saudi-Azm.png"   alt="Saudi AZM">
+      <img class="sccc" src="sccc-by-stc.png" alt="sccc by stc">
     </div>
   </div>
 
