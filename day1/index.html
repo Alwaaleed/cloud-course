@@ -22,6 +22,10 @@
     .k2 .card .ex { display: block; margin-top: .55em; font-size: .6em; color: var(--slate);
       border-top: 1px dashed var(--line); padding-top: .45em; }
     .k2 .card .ex b { color: var(--petrol); font-weight: 700; }
+    /* Links inside the small print of a card — keep the bold-site look, add the underline. */
+    .k2 .card .ex a { color: var(--petrol); font-weight: 700; text-decoration: none;
+      border-bottom: 1px solid rgba(0,86,125,.35); }
+    .k2 .card .ex a:hover { border-bottom-color: var(--petrol); }
 
     /* pipeline / stage strip */
     .pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: .55em;
@@ -150,17 +154,22 @@
       <div class="k2 c4">
         <div class="card"><h3>A GitHub account <span class="tag">day 2 onward</span></h3>
           <p>Where your project lives and where deployment is triggered from.</p>
-          <span class="ex">Sign up at <b>github.com/signup</b> with an email you will keep.</span></div>
+          <span class="ex">Sign up at <a href="https://github.com/signup" target="_blank"
+          rel="noopener">github.com/signup</a> with an email you will keep.</span></div>
         <div class="card"><h3>VS Code <span class="tag">editor</span></h3>
           <p>Your editor for the week.</p>
-          <span class="ex">From <b>code.visualstudio.com</b>.</span></div>
+          <span class="ex">From <a href="https://code.visualstudio.com" target="_blank"
+          rel="noopener">code.visualstudio.com</a>.</span></div>
         <div class="card"><h3>Node.js v20+ <span class="tag">runtime</span></h3>
           <p>So you can run the lab project on your own laptop before it ever reaches a server.</p>
-          <span class="ex">From <b>nodejs.org</b> — check with <b>node -v</b>.</span></div>
+          <span class="ex">From <a href="https://nodejs.org/" target="_blank"
+          rel="noopener">nodejs.org</a> — check with <b>node -v</b>.</span></div>
         <div class="card"><h3>Docker Desktop <span class="tag">day 2</span></h3>
           <p>You build and push your own image with it tomorrow.</p>
-          <span class="ex">From <b>docker.com</b>. On macOS, follow the setup guide by
-          <b>Lama Alothman</b> if you want a walkthrough.</span></div>
+          <span class="ex">From <a href="https://www.docker.com/products/docker-desktop/" target="_blank"
+          rel="noopener">docker.com</a>. On macOS, follow the <a
+          href="https://drive.google.com/file/d/1VWc4m2CFPGV_z7G2keiwmvah3XMl68IQ/view?usp=drive_link"
+          target="_blank" rel="noopener">setup guide</a> by <b>Lama Alothman</b>.</span></div>
       </div>
       <div class="callout hot" style="margin-top:.85em"><b>This costs real money and is really on the internet.</b>
       One small server for the whole week. Do not spin up extras, and follow the cleanup steps on Friday.</div>
