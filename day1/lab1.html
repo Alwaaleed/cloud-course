@@ -63,8 +63,16 @@ body{margin:0; font-family:var(--sans); color:var(--ink); background:var(--bg);
 
 /* ---- content ---- */
 .doc{min-width:0; max-width:78ch}
-.doc h1{margin:56px 0 6px; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
-  color:var(--petrol); border-top:4px solid var(--yellow); padding-top:18px}
+.doc h1{margin:0; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
+  color:var(--petrol)}
+
+/* session break — where the morning lab stops and the afternoon lab starts */
+.sbreak{margin:64px 0 8px; padding:20px 24px 22px; background:var(--card);
+  border:1px solid var(--line); border-top:5px solid var(--yellow); border-radius:2px;
+  box-shadow:0 1px 2px rgba(18,51,61,.04)}
+.sbreak .sbk{display:block; margin-bottom:8px; font-family:var(--mono); font-size:11px;
+  font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--muted)}
+.sbreak .sbk::before{content:"⏸ "; color:var(--yellow)}
 .doc h2{margin:44px 0 4px; font-size:clamp(20px,2.6vw,25px); font-weight:800; letter-spacing:-.01em;
   color:var(--petrol)}
 .doc h3{margin:30px 0 4px; font-size:16px; font-weight:800; letter-spacing:.02em; color:var(--teal)}
@@ -169,6 +177,7 @@ footer{border-top:1px solid var(--line); background:var(--bg)}
 <li class="l2"><a href="#setup">Setup</a></li>
 <li class="l2"><a href="#1-launch-your-first-server">1. Launch your first server</a></li>
 <li class="l2"><a href="#2-sorting-salem-s-startup-stack">2. Sorting Salem&#x27;s startup stack</a></li>
+<li class="l1"><a href="#session-2-operating-your-server">Session 2 · Operating your server</a></li>
 <li class="l2"><a href="#3-connect-to-your-server">3. Connect to your server</a></li>
 <li class="l2"><a href="#4-permissions-why-the-key-needed-chmod-400">4. Permissions — why the key needed chmod 400</a></li>
 <li class="l2"><a href="#5-write-report-sh">5. Write report.sh</a></li>
@@ -285,6 +294,10 @@ service you build on → PaaS.</div></details>
 <p class="wrapup"><strong>Wrap-up question:</strong> two items on that list get the same answer. Which two, and
 why does that surprise people?</p>
 <hr />
+<div class="sbreak"><span class="sbk">Session break</span><h1 id="session-2-operating-your-server">Session 2 · Operating your server</h1></div>
+<div class="callout"><p>Sections 1 and 2 are the morning. Everything from here on is the afternoon
+session — you should have a running server with a public address before you
+start it.</p></div>
 <h2 id="3-connect-to-your-server">3. Connect to your server</h2>
 <p class="task"><span class="tid">3.1</span>Connect from your laptop.</p>
 <pre><code class="language-bash">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;

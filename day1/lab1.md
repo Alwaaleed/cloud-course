@@ -118,6 +118,12 @@ why does that surprise people?
 
 ---
 
+# Session 2 · Operating your server
+
+> Sections 1 and 2 are the morning. Everything from here on is the afternoon
+> session — you should have a running server with a public address before you
+> start it.
+
 ## 3. Connect to your server
 
 **3.1** — Connect from your laptop.

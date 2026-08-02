@@ -85,6 +85,19 @@ def transform(doc):
     doc = re.sub(r"<blockquote>\s*<p>", '<div class="callout"><p>', doc)
     doc = doc.replace("</p>\n</blockquote>", "</p></div>").replace("</blockquote>", "</div>")
 
+    # A body-level `# heading` is a SESSION BREAK — the point where the morning
+    # session's lab stops and the afternoon's begins. One day = one lab file, so
+    # this is the only thing telling a learner which half they are in.
+    doc = re.sub(
+        r"<h1([^>]*)>(.*?)</h1>",
+        lambda m: (
+            '<div class="sbreak"><span class="sbk">Session break</span>'
+            f"<h1{m.group(1)}>{m.group(2)}</h1></div>"
+        ),
+        doc,
+        flags=re.S,
+    )
+
     # `**1.1** — task text` becomes a numbered exercise card.
     doc = re.sub(
         r"<p><strong>([0-9]+\.[0-9]+|C\.[0-9]+)</strong>\s*(?:—|-)?\s*",
@@ -181,8 +194,16 @@ body{margin:0; font-family:var(--sans); color:var(--ink); background:var(--bg);
 
 /* ---- content ---- */
 .doc{min-width:0; max-width:78ch}
-.doc h1{margin:56px 0 6px; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
-  color:var(--petrol); border-top:4px solid var(--yellow); padding-top:18px}
+.doc h1{margin:0; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
+  color:var(--petrol)}
+
+/* session break — where the morning lab stops and the afternoon lab starts */
+.sbreak{margin:64px 0 8px; padding:20px 24px 22px; background:var(--card);
+  border:1px solid var(--line); border-top:5px solid var(--yellow); border-radius:2px;
+  box-shadow:0 1px 2px rgba(18,51,61,.04)}
+.sbreak .sbk{display:block; margin-bottom:8px; font-family:var(--mono); font-size:11px;
+  font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--muted)}
+.sbreak .sbk::before{content:"⏸ "; color:var(--yellow)}
 .doc h2{margin:44px 0 4px; font-size:clamp(20px,2.6vw,25px); font-weight:800; letter-spacing:-.01em;
   color:var(--petrol)}
 .doc h3{margin:30px 0 4px; font-size:16px; font-weight:800; letter-spacing:.02em; color:var(--teal)}

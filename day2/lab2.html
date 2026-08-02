@@ -63,8 +63,16 @@ body{margin:0; font-family:var(--sans); color:var(--ink); background:var(--bg);
 
 /* ---- content ---- */
 .doc{min-width:0; max-width:78ch}
-.doc h1{margin:56px 0 6px; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
-  color:var(--petrol); border-top:4px solid var(--yellow); padding-top:18px}
+.doc h1{margin:0; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
+  color:var(--petrol)}
+
+/* session break — where the morning lab stops and the afternoon lab starts */
+.sbreak{margin:64px 0 8px; padding:20px 24px 22px; background:var(--card);
+  border:1px solid var(--line); border-top:5px solid var(--yellow); border-radius:2px;
+  box-shadow:0 1px 2px rgba(18,51,61,.04)}
+.sbreak .sbk{display:block; margin-bottom:8px; font-family:var(--mono); font-size:11px;
+  font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--muted)}
+.sbreak .sbk::before{content:"⏸ "; color:var(--yellow)}
 .doc h2{margin:44px 0 4px; font-size:clamp(20px,2.6vw,25px); font-weight:800; letter-spacing:-.01em;
   color:var(--petrol)}
 .doc h3{margin:30px 0 4px; font-size:16px; font-weight:800; letter-spacing:.02em; color:var(--teal)}
@@ -171,6 +179,7 @@ footer{border-top:1px solid var(--line); background:var(--bg)}
 <li class="l2"><a href="#2-make-the-badge-yours-then-push-it">2. Make the badge yours, then push it</a></li>
 <li class="l2"><a href="#3-hisham-s-mystery-container">3. Hisham&#x27;s mystery container</a></li>
 <li class="l2"><a href="#4-install-docker-on-your-server">4. Install Docker on your server</a></li>
+<li class="l1"><a href="#session-2-build-it-deploy-it-then-never-do-that-again">Session 2 · Build it, deploy it, then never do that again</a></li>
 <li class="l2"><a href="#5-complete-the-dockerfile">5. Complete the Dockerfile</a></li>
 <li class="l2"><a href="#6-build-push-pull-run-by-hand">6. Build, push, pull, run — by hand</a></li>
 <li class="l2"><a href="#7-feel-the-pain-then-remove-it">7. Feel the pain, then remove it</a></li>
@@ -275,6 +284,10 @@ docker --version
 <li>You ran, <code>exec</code>-ed into, and cleaned up the nginx container</li>
 </ul>
 <hr />
+<div class="sbreak"><span class="sbk">Session break</span><h1 id="session-2-build-it-deploy-it-then-never-do-that-again">Session 2 · Build it, deploy it, then never do that again</h1></div>
+<div class="callout"><p>Sections 1 to 4 are the morning, and they end at Milestone 3. Everything from
+here on is the afternoon session — you should have your badge on GitHub and
+Docker running on your server before you start it.</p></div>
 <h2 id="5-complete-the-dockerfile">5. Complete the Dockerfile</h2>
 <p>The starter project has a <code>Dockerfile</code> with the key lines blanked out. Everything
 you need, you already learned.</p>

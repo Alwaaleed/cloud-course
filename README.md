@@ -51,6 +51,19 @@ python3 tools/md2lab.py day1/lab1.md day1/lab1.html "Day 1 · Lab 1" "Cloud Comp
 Edit the `.md`, re-run, commit both. (Needs `mistune`; the output has no runtime
 dependencies and opens from `file://` like the decks.)
 
+Each day is one lab file covering **two sessions**, so every lab carries a
+**session break** — a body-level `# heading`, which renders as a banded divider
+and a contents entry. It goes immediately before the first section of the
+afternoon, followed by a blockquote saying what must already be working:
+
+```markdown
+# Session 2 · Operating your server
+
+> Sections 1 and 2 are the morning. Everything from here on is the afternoon.
+```
+
+`#` means nothing else inside a lab body. Keep this on every future lab.
+
 ## Deploying
 
 GitHub Pages, from the default branch, repo root. `.nojekyll` must stay at the

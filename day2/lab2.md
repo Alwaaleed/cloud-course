@@ -146,6 +146,12 @@ docker --version
 
 ---
 
+# Session 2 · Build it, deploy it, then never do that again
+
+> Sections 1 to 4 are the morning, and they end at Milestone 3. Everything from
+> here on is the afternoon session — you should have your badge on GitHub and
+> Docker running on your server before you start it.
+
 ## 5. Complete the Dockerfile
 
 The starter project has a `Dockerfile` with the key lines blanked out. Everything
