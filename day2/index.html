@@ -114,8 +114,8 @@
       <p class="kicker">The day · four moves</p>
       <h2>From your laptop to a public address, in four moves</h2>
       <div class="pipe">
-        <div class="stg"><div class="num">Move 1</div><h3>Get the project</h3>
-          <div class="q">Fork the starter, clone your fork, make the badge yours.</div>
+        <div class="stg"><div class="num">Move 1</div><h3>Confirm the project</h3>
+          <div class="q">Already forked, cloned, and made yours yesterday — a quick check, then move on.</div>
           <div class="tools"><span>Git</span><span>GitHub</span><span>VS Code</span></div></div>
         <div class="stg"><div class="num">Move 2</div><h3>Run someone else's</h3>
           <div class="q">Install Docker on the server and drive it with six commands.</div>
@@ -163,18 +163,18 @@
     </section>
 
     <section>
-      <p class="kicker">The lab project · what you are deploying all week</p>
-      <h2>Meet the Cloud Explorer Badge — the app you make yours</h2>
+      <p class="kicker">The lab project · recap from yesterday</p>
+      <h2>The Cloud Explorer Badge — the app you already made yours</h2>
       <div class="two">
         <div>
           <div class="k2" style="grid-template-columns:1fr;margin-top:0">
             <div class="card"><h3>A small web page with your name on it</h3>
               <p>Your colours, a fun fact, your favourite film or game, and a photo booth that uses the camera.
-              A real React app, not a toy page.</p></div>
-            <div class="card"><h3>You change one block</h3>
+              A real React app you forked, cloned and personalised yesterday.</p></div>
+            <div class="card"><h3>You already changed one block</h3>
               <p>Everything personal lives in a single <b class="mono">CONFIG</b> object at the top of
-              <b class="mono">src/App.tsx</b>. You never need to read the rest of the code.</p>
-              <span class="ex">Run it locally first: <b class="mono">npm install</b>, then
+              <b class="mono">src/App.tsx</b> — the one you edited yesterday.</p>
+              <span class="ex">Need it running locally again? <b class="mono">npm install</b>, then
               <b class="mono">npm run dev</b> → <b class="mono">localhost:5173</b>.</span></div>
           </div>
         </div>
@@ -190,30 +190,52 @@
   },
 };</div>
       </div>
-      <aside class="notes">Presenter: open the real badge and change a colour live — Vite updates the browser
-      instantly. That five-second demo sells the whole day.</aside>
+      <aside class="notes">Presenter: this is a recap, not a fresh intro — most of the room built and pushed this
+      yesterday. Thirty seconds, tops. Point at the CONFIG block once: section 7 this afternoon comes back to
+      change <b class="mono">gradientColors</b> again.</aside>
     </section>
 
     <section>
-      <p class="kicker">Foundations · the one Git decision that bites</p>
-      <h2>Fork first, then clone — or you will have nowhere to push</h2>
+      <p class="kicker">Foundations · the one Git decision that already paid off</p>
+      <h2>Fork first, then clone — why yesterday's choice matters today</h2>
       <div class="k2 c2">
         <div class="card alt"><h3>Clone the starter directly <span class="tag">the trap</span></h3>
           <p>Your copy stays pointed at <b>our</b> repository. You can commit locally all day, but the first
           time you push, GitHub refuses — you have no write access to someone else's repo.</p>
           <span class="ex">You find out at the worst possible moment: <b>at the end</b>.</span></div>
-        <div class="card"><h3>Fork, then clone your fork <span class="tag">do this</span></h3>
+        <div class="card"><h3>Fork, then clone your fork <span class="tag">what you did</span></h3>
           <p>A fork is a full copy <b>under your own account</b>. Clone that, and every commit and push this
           week goes to a repo you own — including the one that triggers your deployments this afternoon.</p>
           <span class="ex">On GitHub: <b>Fork</b> → <b>Create fork</b>, then copy <b>your</b> URL.</span></div>
       </div>
-      <div class="callout hot" style="margin-top:.85em">In VS Code: <b class="mono">Ctrl/Cmd + Shift + P</b> →
+      <div class="callout hot" style="margin-top:.85em">Already forked and cloned yesterday? You're set — move to
+      the next slide. Haven't yet? In VS Code: <b class="mono">Ctrl/Cmd + Shift + P</b> →
       <b class="mono">Git: Clone</b> → paste <b>your fork's</b> URL — the one with your username in it, not
       ours.</div>
-      <aside class="notes">Presenter: most of the room already forked this on Day 1 — ask for a show of hands and
-      point those students straight to cloning their existing fork. For anyone who didn't, walk them through
-      Fork → Create fork here. Either way, half the class will paste the original repo's URL into Git: Clone out
-      of habit — catching that now saves twenty minutes at Milestone 3.</aside>
+      <aside class="notes">Presenter: most of the room already forked and cloned this on Day 1 — ask for a show of
+      hands. This slide is now about *why* that choice mattered, not a live walkthrough. For the rare student who
+      hasn't forked yet, point them at the callout and let them catch up while the room moves on.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · what Docker actually is</p>
+      <h2>Docker packages your app so it runs the same everywhere</h2>
+      <div class="k2 c3">
+        <div class="card alt"><h3>Yesterday <span class="tag">virtual machine</span></h3>
+          <p>Your ECS instance is a whole computer: its own kernel, its own operating system, a minute to
+          boot.</p></div>
+        <div class="card"><h3>Today <span class="tag">container</span></h3>
+          <p>Docker packages <b>just your app and what it needs to run</b>, and shares the host's operating
+          system instead of bringing its own. It starts in seconds and runs the same way on any machine.</p></div>
+        <div class="card"><h3>Docker <span class="tag">the engine</span></h3>
+          <p>Docker is the tool that builds, ships and runs containers — the six commands you are about to use
+          all week.</p></div>
+      </div>
+      <div class="callout" style="margin-top:.9em">One sentence worth remembering: a container is lighter because
+      it never brings its own operating system. The next slide makes that difference visible.</div>
+      <aside class="notes">Presenter: land this definition in words before the widget — "shares the host's OS,
+      no guest OS" is the one fact the next slide's cost comparison depends on. Don't skip straight to the
+      widget or the cost drop won't make sense.</aside>
     </section>
 
     <section>
@@ -245,6 +267,31 @@
       Today's image is a <b>packaged application</b>. Same word, different layer.</div>
       <aside class="notes">Presenter: this collision genuinely confuses people on day 2. Say it out loud once,
       then use "OS image" and "container image" for the rest of the week.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · naming an image, and where it lives</p>
+      <h2>image:tag, and the registry it came from</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>Naming <span class="tag">image:tag</span></h3>
+          <p>An image's full name is <b class="mono">image:tag</b>. The tag picks a version or variant — leave it
+          off and Docker assumes <b class="mono">:latest</b>.</p>
+          <span class="ex"><b class="mono">nginx</b> really means <b class="mono">nginx:latest</b>;
+          <b class="mono">node:22-alpine</b> names the image <i>and</i> the exact variant.</span></div>
+        <div class="card"><h3>Images live in a registry</h3>
+          <p>A registry is a server that stores images for <b class="mono">docker push</b> and
+          <b class="mono">docker pull</b>. <b>Docker Hub</b> is the default, and the one this course uses.</p></div>
+        <div class="card"><h3>Docker Hub isn't the only one</h3>
+          <p>Alibaba Cloud has its own <b>Container Registry (ACR)</b>; GitHub has <b>ghcr.io</b>. Same idea,
+          different host — the image name just gets a prefix.</p>
+          <span class="ex"><b class="mono">ghcr.io/user/app</b> instead of <b class="mono">user/app</b>.</span></div>
+      </div>
+      <div class="callout hot" style="margin-top:.85em">In a moment, Hisham's task runs
+      <b class="mono">docker run … nginx</b>. Docker won't find <b class="mono">nginx:latest</b> on the server, so
+      it will pull it from Docker Hub automatically, first — before it ever starts the container.</div>
+      <aside class="notes">Presenter: this slide pre-empts a question the Hisham task raises but never states —
+      where does nginx actually come from? Land it here, before the task, so the pull-then-run behaviour isn't a
+      mystery when they see it happen.</aside>
     </section>
 
     <section>
@@ -289,17 +336,17 @@
 
     <section>
       <p class="kicker">Task · Hisham's mystery container</p>
-      <h2>Fill the blanks and find out what is running inside</h2>
+      <h2>Here is exactly what to run — and why each line matters</h2>
       <p class="sub" style="font-size:.64em;max-width:none;margin-bottom:.2em">Hisham started a container
-      someone handed him and has no idea what is in it. Run this <b>on your server</b>, over SSH.</p>
+      someone handed him and has no idea what is in it. Let's explore the commands.</p>
       <div class="codeblock sm"><span class="cmt"># 1. Run nginx, name it "web", map host 8080 → container 80</span>
-docker run -d --name web -p <span class="fill">____</span>:<span class="fill">____</span> nginx
+docker run -d --name web -p 8080:80 nginx
 
 <span class="cmt"># 2. List running containers — is "web" there?</span>
-docker <span class="fill">____</span>
+docker ps
 
 <span class="cmt"># 3. Open a shell inside it, then look around</span>
-docker exec -it web <span class="fill">____</span>
+docker exec -it web sh
 <span class="cmt">#   (inside)  ls /usr/share/nginx/html   →  then: exit</span>
 
 <span class="cmt"># 4. Check it serves a page, from the server itself</span>
@@ -307,8 +354,10 @@ curl http://localhost:8080
 
 <span class="cmt"># 5. Clean up</span>
 docker stop web &amp;&amp; docker rm web</div>
-      <aside class="notes">Presenter: let them try before hinting. The one hint worth giving: nginx serves on
-      80 inside, always — so only one of the two numbers is yours to choose.</aside>
+      <aside class="notes">Presenter: talk through every line before running anything — <b>-d</b> detaches,
+      <b>--name</b> gives it a handle, <b>-p 8080:80</b> is host:container (nginx always listens on 80 inside),
+      <b>exec -it … sh</b> is a live shell in, not a copy. Then run it live and let the room watch each command
+      land.</aside>
     </section>
 
     <section>
@@ -317,7 +366,8 @@ docker stop web &amp;&amp; docker rm web</div>
       <div class="steps">
         <div class="rule"><span class="n">1</span><p>Your personalised badge is pushed to <b>your own
           fork</b>.</p></div>
-        <div class="rule"><span class="n">2</span><p>SSH into yesterday's server:
+        <div class="rule"><span class="n">2</span><p>SSH into yesterday's server — <b>Terminal</b> on macOS/Linux,
+          <b>Git Bash</b> or <b>MobaXterm</b> on Windows:<br>
           <b class="mono">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;</b></p></div>
         <div class="rule"><span class="n">3</span><p>Install Docker on it:
           <b class="mono">curl -fsSL https://get.docker.com | sh</b>, then confirm with
