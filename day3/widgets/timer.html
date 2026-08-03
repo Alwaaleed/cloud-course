@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Challenge timer — 15 minutes, counting down</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  body { display: flex; align-items: center; justify-content: center; height: 100vh; }
+  .w { width: 100%; max-width: 780px; padding: 30px 40px; text-align: center; }
+  .digits { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-weight: 800;
+    font-size: 140px; line-height: 1; color: #00567C; letter-spacing: .01em; }
+  .digits.warn { color: #C89B00; }
+  .digits.dngr { color: #D64545; }
+  .bar { height: 22px; border-radius: 999px; background: #E0E7E8; overflow: hidden; margin-top: 22px; }
+  .fill { height: 100%; width: 100%; background: #1F8F89; transition: width 1s linear, background 300ms ease; }
+  .fill.warn { background: #C89B00; } .fill.dngr { background: #D64545; }
+  .lbl { margin-top: 12px; font-size: 15px; color: #8AA1A8; letter-spacing: .05em; text-transform: uppercase;
+    font-weight: 700; }
+  .ctl { justify-content: center; margin-top: 26px; }
+  .ctl button { font-size: 16px; padding: 12px 22px; }
+  .done { margin-top: 14px; font-weight: 800; color: #D64545; font-size: 20px;
+    letter-spacing: .06em; text-transform: uppercase; visibility: hidden; }
+  .done.show { visibility: visible; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .digits.dngr, .done.show { animation: pulse 1s infinite; }
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="digits" id="digits">15:00</div>
+  <div class="bar"><div class="fill" id="fill"></div></div>
+  <div class="lbl">time remaining — first table to 5 / 5 wins outright</div>
+  <div class="done" id="done">⏰ time's up — count every table's live VMs now</div>
+  <div class="ctl">
+    <button id="start" class="primary">▶ Start</button>
+    <button id="pause">⏸ Pause</button>
+    <button id="reset">↺ Reset (15:00)</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TOTAL = 15 * 60;
+  var remaining = TOTAL, running = false, tick = null;
+  var digits = document.getElementById("digits"), fill = document.getElementById("fill");
+  var done = document.getElementById("done");
+  var startBtn = document.getElementById("start"), pauseBtn = document.getElementById("pause");
+  var resetBtn = document.getElementById("reset");
+
+  function fmt(s) {
+    var m = Math.floor(s / 60), r = s % 60;
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  function render() {
+    digits.textContent = fmt(remaining);
+    var pct = Math.max(0, (remaining / TOTAL) * 100);
+    fill.style.width = pct + "%";
+    var warn = remaining <= 300 && remaining > 60;   /* last 5 minutes */
+    var dngr = remaining <= 60;                       /* last 1 minute */
+    digits.className = "digits" + (dngr ? " dngr" : warn ? " warn" : "");
+    fill.className = "fill" + (dngr ? " dngr" : warn ? " warn" : "");
+    done.classList.toggle("show", remaining <= 0);
+    startBtn.disabled = running;
+    pauseBtn.disabled = !running;
+  }
+
+  function step() {
+    remaining = Math.max(0, remaining - 1);
+    render();
+    if (remaining <= 0) { running = false; clearInterval(tick); tick = null; render(); }
+  }
+
+  startBtn.addEventListener("click", function () {
+    if (running || remaining <= 0) return;
+    running = true; render();
+    tick = setInterval(step, 1000);
+  });
+  pauseBtn.addEventListener("click", function () {
+    running = false; clearInterval(tick); tick = null; render();
+  });
+  resetBtn.addEventListener("click", function () {
+    running = false; clearInterval(tick); tick = null; remaining = TOTAL; render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

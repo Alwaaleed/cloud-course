@@ -41,7 +41,7 @@ MAJAL.logoIMG = function () {
 };
 MAJAL.mountChrome = function () {
   var b = MAJAL.el("div", { class: "brandmark", html: MAJAL.logoIMG() });
-  var d = MAJAL.el("div", { class: "dayflag", text: "DAY 3 · DAY 3 TITLE" });
+  var d = MAJAL.el("div", { class: "dayflag", text: "DAY 3 · ADDRESSING & PROTECTION" });
   document.body.appendChild(b);
   document.body.appendChild(d);
 };
