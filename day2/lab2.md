@@ -35,12 +35,23 @@ you are signed into.
 
 ## 1. Fork the starter, then clone your fork
 
-**1.1** — Open the starter project on GitHub and click **Fork** → **Create fork**.
-This makes a complete copy of the project *under your own account*.
+**1.1** — If you already forked and cloned the starter project on Day 1, made
+the badge yours, and pushed it, skip ahead to **section 3** — sections 1 and 2
+are done. Otherwise, fork it now. Screenshot walkthrough: [Fork flow guide](../guides/github-fork-flow.pdf).
 
-**1.2** — In VS Code, press `Ctrl/Cmd + Shift + P`, type **Git: Clone**, and paste
-**your fork's** URL — the one with *your* username in it. Pick a folder, and say
-yes when VS Code offers to open it.
+Open the starter project at
+[github.com/aliAljaffer/cloud-explorer](https://github.com/aliAljaffer/cloud-explorer)
+and click **Fork** → **Create fork**. This makes a complete copy of the project
+*under your own account*.
+
+**1.2** — Clone your fork into VS Code. Screenshot walkthrough, through
+committing and pushing in section 2: [Git Clone, Commit, Push guide](../guides/git-clone-commit-push-guide.pdf).
+
+1. Press `Ctrl/Cmd + Shift + P`.
+2. Type **Git: Clone** and select it.
+3. Paste **your fork's URL** — the one with *your* username in it, not the original.
+4. Pick a folder to clone into.
+5. Click **Open** when VS Code asks.
 
 > *Hint: if you clone the original instead of your fork, everything works right up
 > until your first push, which GitHub refuses — you have no write access to
@@ -69,8 +80,9 @@ and save. The browser updates instantly.
 **2.2** — Push it to your fork, without using the terminal:
 
 1. Click the **Source Control** icon in the left sidebar.
-2. Type a short message — `Make the badge mine` — and click **✓ Commit**.
-3. Click **Sync Changes**. The first time, VS Code asks you to sign in to GitHub
+2. Type a short commit message, e.g. `Make the badge mine`.
+3. Click **✓ Commit**.
+4. Click **Sync Changes**. The first time, VS Code asks you to sign in to GitHub
    in the browser; approve it.
 
 > *Hint: **✓ Commit** is `git add` and `git commit` in one click. **Sync Changes**
@@ -81,14 +93,38 @@ Why does that matter for what you are about to build this afternoon?
 
 ---
 
-## 3. Hisham's mystery container
+## 3. Install Docker on your server
+
+### 🏆 Milestone 3 — your project and Docker, on the server
+
+**3.1** — SSH in. **macOS/Linux:** **Terminal** (screenshot: [Terminal SSH](../guides/ssh.png)).
+**Windows:** **Git Bash**, or **MobaXterm** (screenshot walkthrough: [MobaXterm SSH setup](../guides/MobaXterm.png)):
+
+```bash
+ssh -i ~/my-key.pem root@<your-EIP>
+```
+
+**3.2** — Install Docker:
+
+```bash
+curl -fsSL https://get.docker.com | sh
+```
+
+**3.3** — Confirm it installed:
+
+```bash
+docker --version
+```
+
+---
+
+## 4. Hisham's mystery container
 
 Hisham installed Docker and started a container someone handed him, and has no
 idea what is running inside it. Help him investigate with the commands from the
 session.
 
-**3.1** — Fill in the blanks. Run this **on your server**, over SSH — you will
-install Docker there in section 4, so come back to this if you are working ahead.
+**4.1** — Fill in the blanks. Run this **on your server**, over SSH:
 
 ```bash
 # 1. Run the official nginx web server, name it "web",
@@ -116,27 +152,6 @@ docker stop web && docker rm web
 
 **Wrap-up question:** you never installed nginx on your server. So where did it
 come from, and what is left behind on the server after step 5?
-
----
-
-## 4. Install Docker on your server
-
-### 🏆 Milestone 3 — your project and Docker, on the server
-
-**4.1** — SSH in:
-
-```bash
-ssh -i ~/my-key.pem root@<your-EIP>
-```
-
-**4.2** — Install Docker and confirm it:
-
-```bash
-curl -fsSL https://get.docker.com | sh
-docker --version
-```
-
-**4.3** — Now complete section 3 right here on the server.
 
 ### ✅ You have finished Milestone 3 when
 
@@ -189,8 +204,21 @@ much of that ends up on your server, and why?
 needs 80 to prove you own the name, and 443 to serve the site. Day 3 explains
 what you just did.
 
-**6.2** — Create a free account at `hub.docker.com`, then sign in from **Docker
-Desktop** (top right). The CLI reuses that login.
+**6.2** — Set up Docker Hub:
+
+1. Create a free account at `hub.docker.com`, if you don't have one already.
+2. Open **Docker Desktop** and sign in (top right). The CLI reuses that login
+   automatically — no `docker login` needed in the terminal.
+3. **If Docker Desktop sign-in isn't available on your machine**, log in from the
+   terminal instead. Screenshot walkthrough: [Docker Hub account and access
+   token creation](../guides/Docker%20Hub%20account%20and%20access%20token%20creation.pdf).
+   1. On Docker Hub: your avatar → **Account settings** → **Personal access
+      tokens** → **Generate new token**.
+   2. Set **Access permissions** to **Read & Write** — the default *Read-only*
+      can't push an image.
+   3. Click **Generate** and copy the token now; it is shown once.
+   4. Run `docker login -u <your-dockerhub-username>` and paste the token when
+      prompted for a password.
 
 **6.3** — On **your own machine**, build and push:
 
@@ -204,7 +232,8 @@ docker push ______/cloud-explorer
 > container refuses to start on the server with an exec-format error.*
 
 **6.4** — On **your server**, pull it and run it. The site serves at your IP with
-the dots turned into dashes, plus `.sslip.io`:
+the dots turned into dashes, plus `.sslip.io` — for example, the IP `47.253.1.100`
+becomes `47-253-1-100.sslip.io`:
 
 ```bash
 docker pull <your-dockerhub-username>/cloud-explorer
@@ -227,15 +256,24 @@ on the internet.** 🎉
 
 ## 7. Feel the pain, then remove it
 
-**7.1** — Change `gradientColors` in `CONFIG` to different colours. Now get that
-one line onto the internet, by hand: commit and push, rebuild the image, push it
-to Docker Hub, SSH in, pull, remove the old container, run the new one.
+**7.1** — Change `gradientColors` in `CONFIG` to different colours, then ship that
+one-line change **by hand**, exactly like section 6:
 
-That is seven steps for one line. Do it once, deliberately, so the rest of this
-section means something.
+1. Commit and push the change from VS Code.
+2. Rebuild the image: `docker build --platform linux/amd64 -t <your-dockerhub-username>/cloud-explorer .`
+3. Push it: `docker push <your-dockerhub-username>/cloud-explorer`
+4. SSH into your server.
+5. Pull the new image: `docker pull <your-dockerhub-username>/cloud-explorer`
+6. Remove the old container: `docker rm -f cloud-explorer`
+7. Run the new one: `docker run -d -p 80:80 -p 443:443 -e SITE_ADDRESS=<your-ip-with-dashes>.sslip.io --name cloud-explorer <your-dockerhub-username>/cloud-explorer`
 
-**7.2** — Add six repository secrets. In your GitHub repo: **Settings → Secrets
-and variables → Actions → New repository secret**.
+That is seven manual steps for one line. Do them once, deliberately — the rest of
+this section exists because of what you just felt.
+
+**7.2** — Add six repository secrets. Screenshot walkthrough:
+[GitHub repo Secrets setup guide](../guides/github-repo-secrets-setup.pdf).
+In your GitHub repo: **Settings → Secrets and variables → Actions → New
+repository secret**.
 
 | Secret | Value |
 |---|---|
@@ -303,11 +341,16 @@ jobs:
 
 **8.1** — Commit both completed files, the `Dockerfile` and `deploy.yml`.
 
-**8.2** — Change `gradientColors` again, flip `isOnCloud` to `true`, then commit
-and push from VS Code.
+**8.2** — Ship the payoff change:
 
-**8.3** — Open the **Actions** tab in your repo and watch both jobs run. When they
-go green, refresh `https://<your-ip-with-dashes>.sslip.io`.
+1. Change `gradientColors` again.
+2. Flip `isOnCloud` to `true`.
+3. Commit and push from VS Code.
+
+**8.3** — Not sure what a passing run should look like?
+[See an example](../guides/github-actions-run.png). Open the **Actions** tab in
+your repo and watch both jobs run. When they go green, refresh
+`https://<your-ip-with-dashes>.sslip.io`.
 
 **New colours. And you did nothing but push.** 🚀
 

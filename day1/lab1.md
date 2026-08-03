@@ -126,7 +126,10 @@ why does that surprise people?
 
 ## 3. Connect to your server
 
-**3.1** — Connect from your laptop.
+**3.1** — Connect from your laptop. **macOS/Linux:** run this in **Terminal**
+(screenshot: [Terminal SSH](../guides/ssh.png)). **Windows:** run it in **Git
+Bash** exactly as shown below, or use **MobaXterm** instead (screenshot
+walkthrough: [MobaXterm SSH setup](../guides/MobaXterm.png)):
 
 ```bash
 ssh -i ~/my-key.pem root@<your-EIP>
@@ -259,3 +262,11 @@ quit a manual page), and a teaching assistant is available during lab hours.
 
 **Leave the server running.** Tomorrow you put your app in a container and deploy
 it onto this exact machine.
+
+### Before Day 2
+
+On macOS, follow the
+[Docker Desktop setup guide](../guides/docker-desktop-setup-macos.pdf) to
+install **Docker Desktop** tonight from
+[docker.com](https://www.docker.com/products/docker-desktop/) — it downloads
+slowly, and Day 2's lab assumes it is already running.
