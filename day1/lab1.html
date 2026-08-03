@@ -299,7 +299,10 @@ why does that surprise people?</p>
 session — you should have a running server with a public address before you
 start it.</p></div>
 <h2 id="3-connect-to-your-server">3. Connect to your server</h2>
-<p class="task"><span class="tid">3.1</span>Connect from your laptop.</p>
+<p class="task"><span class="tid">3.1</span>Connect from your laptop. <strong>macOS/Linux:</strong> run this in <strong>Terminal</strong>
+(screenshot: <a href="../guides/ssh.png">Terminal SSH</a>). <strong>Windows:</strong> run it in <strong>Git
+Bash</strong> exactly as shown below, or use <strong>MobaXterm</strong> instead (screenshot
+walkthrough: <a href="../guides/MobaXterm.png">MobaXterm SSH setup</a>):</p>
 <pre><code class="language-bash">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;
 </code></pre>
 <details class="hint"><summary>Hint</summary><div class="hint-body"><code>-i</code> means &quot;identify me with this private key file&quot;. The first time it
@@ -392,6 +395,12 @@ and pulls the owner line back out with a pipe.</li>
 quit a manual page), and a teaching assistant is available during lab hours.</p>
 <p><strong>Leave the server running.</strong> Tomorrow you put your app in a container and deploy
 it onto this exact machine.</p>
+<h3>Before Day 2</h3>
+<p>On macOS, follow the
+<a href="../guides/docker-desktop-setup-macos.pdf">Docker Desktop setup guide</a> to
+install <strong>Docker Desktop</strong> tonight from
+<a href="https://www.docker.com/products/docker-desktop/">docker.com</a> — it downloads
+slowly, and Day 2's lab assumes it is already running.</p>
 
 </main>
 </div>

@@ -177,8 +177,8 @@ footer{border-top:1px solid var(--line); background:var(--bg)}
 <li class="l2"><a href="#setup">Setup</a></li>
 <li class="l2"><a href="#1-fork-the-starter-then-clone-your-fork">1. Fork the starter, then clone your fork</a></li>
 <li class="l2"><a href="#2-make-the-badge-yours-then-push-it">2. Make the badge yours, then push it</a></li>
-<li class="l2"><a href="#3-hisham-s-mystery-container">3. Hisham&#x27;s mystery container</a></li>
-<li class="l2"><a href="#4-install-docker-on-your-server">4. Install Docker on your server</a></li>
+<li class="l2"><a href="#3-install-docker-on-your-server">3. Install Docker on your server</a></li>
+<li class="l2"><a href="#4-hisham-s-mystery-container">4. Hisham&#x27;s mystery container</a></li>
 <li class="l1"><a href="#session-2-build-it-deploy-it-then-never-do-that-again">Session 2 · Build it, deploy it, then never do that again</a></li>
 <li class="l2"><a href="#5-complete-the-dockerfile">5. Complete the Dockerfile</a></li>
 <li class="l2"><a href="#6-build-push-pull-run-by-hand">6. Build, push, pull, run — by hand</a></li>
@@ -204,11 +204,22 @@ a second one. If you deleted yesterday's, launch a replacement now with the same
 settings before you go any further.</p></div>
 <hr />
 <h2 id="1-fork-the-starter-then-clone-your-fork">1. Fork the starter, then clone your fork</h2>
-<p class="task"><span class="tid">1.1</span>Open the starter project on GitHub and click <strong>Fork</strong> → <strong>Create fork</strong>.
-This makes a complete copy of the project <em>under your own account</em>.</p>
-<p class="task"><span class="tid">1.2</span>In VS Code, press <code>Ctrl/Cmd + Shift + P</code>, type <strong>Git: Clone</strong>, and paste
-<strong>your fork's</strong> URL — the one with <em>your</em> username in it. Pick a folder, and say
-yes when VS Code offers to open it.</p>
+<p class="task"><span class="tid">1.1</span>If you already forked and cloned the starter project on Day 1, made
+the badge yours, and pushed it, skip ahead to <strong>section 3</strong> — sections 1 and 2
+are done. Otherwise, fork it now. Screenshot walkthrough: <a href="../guides/github-fork-flow.pdf">Fork flow guide</a>.</p>
+<p>Open the starter project at
+<a href="https://github.com/aliAljaffer/cloud-explorer">github.com/aliAljaffer/cloud-explorer</a>
+and click <strong>Fork</strong> → <strong>Create fork</strong>. This makes a complete copy of the project
+<em>under your own account</em>.</p>
+<p class="task"><span class="tid">1.2</span>Clone your fork into VS Code. Screenshot walkthrough, through
+committing and pushing in section 2: <a href="../guides/git-clone-commit-push-guide.pdf">Git Clone, Commit, Push guide</a>.</p>
+<ol>
+<li>Press <code>Ctrl/Cmd + Shift + P</code>.</li>
+<li>Type <strong>Git: Clone</strong> and select it.</li>
+<li>Paste <strong>your fork's URL</strong> — the one with <em>your</em> username in it, not the original.</li>
+<li>Pick a folder to clone into.</li>
+<li>Click <strong>Open</strong> when VS Code asks.</li>
+</ol>
 <details class="hint"><summary>Hint</summary><div class="hint-body">if you clone the original instead of your fork, everything works right up
 until your first push, which GitHub refuses — you have no write access to
 someone else's repository. The fix is to start again from 1.1, so it is worth
@@ -228,7 +239,8 @@ and save. The browser updates instantly.</p>
 <p class="task"><span class="tid">2.2</span>Push it to your fork, without using the terminal:</p>
 <ol>
 <li>Click the <strong>Source Control</strong> icon in the left sidebar.</li>
-<li>Type a short message — <code>Make the badge mine</code> — and click <strong>✓ Commit</strong>.</li>
+<li>Type a short commit message, e.g. <code>Make the badge mine</code>.</li>
+<li>Click <strong>✓ Commit</strong>.</li>
 <li>Click <strong>Sync Changes</strong>. The first time, VS Code asks you to sign in to GitHub
 in the browser; approve it.</li>
 </ol>
@@ -237,12 +249,24 @@ is <code>git push</code>. Those are three of the four verbs from the slides.</di
 <p class="wrapup"><strong>Wrap-up question:</strong> your commit went to your fork, not to the original project.
 Why does that matter for what you are about to build this afternoon?</p>
 <hr />
-<h2 id="3-hisham-s-mystery-container">3. Hisham's mystery container</h2>
+<h2 id="3-install-docker-on-your-server">3. Install Docker on your server</h2>
+<h3>🏆 Milestone 3 — your project and Docker, on the server</h3>
+<p class="task"><span class="tid">3.1</span>SSH in. <strong>macOS/Linux:</strong> <strong>Terminal</strong> (screenshot: <a href="../guides/ssh.png">Terminal SSH</a>).
+<strong>Windows:</strong> <strong>Git Bash</strong>, or <strong>MobaXterm</strong> (screenshot walkthrough: <a href="../guides/MobaXterm.png">MobaXterm SSH setup</a>):</p>
+<pre><code class="language-bash">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;
+</code></pre>
+<p class="task"><span class="tid">3.2</span>Install Docker:</p>
+<pre><code class="language-bash">curl -fsSL https://get.docker.com | sh
+</code></pre>
+<p class="task"><span class="tid">3.3</span>Confirm it installed:</p>
+<pre><code class="language-bash">docker --version
+</code></pre>
+<hr />
+<h2 id="4-hisham-s-mystery-container">4. Hisham's mystery container</h2>
 <p>Hisham installed Docker and started a container someone handed him, and has no
 idea what is running inside it. Help him investigate with the commands from the
 session.</p>
-<p class="task"><span class="tid">3.1</span>Fill in the blanks. Run this <strong>on your server</strong>, over SSH — you will
-install Docker there in section 4, so come back to this if you are working ahead.</p>
+<p class="task"><span class="tid">4.1</span>Fill in the blanks. Run this <strong>on your server</strong>, over SSH:</p>
 <pre><code class="language-bash"># 1. Run the official nginx web server, name it &quot;web&quot;,
 #    map host port 8080 → container port 80
 docker run -d --name web -p ____:____ nginx
@@ -266,17 +290,6 @@ docker stop web &amp;&amp; docker rm web
 is yours to choose — nginx always listens on 80 inside the image.</div></details>
 <p class="wrapup"><strong>Wrap-up question:</strong> you never installed nginx on your server. So where did it
 come from, and what is left behind on the server after step 5?</p>
-<hr />
-<h2 id="4-install-docker-on-your-server">4. Install Docker on your server</h2>
-<h3>🏆 Milestone 3 — your project and Docker, on the server</h3>
-<p class="task"><span class="tid">4.1</span>SSH in:</p>
-<pre><code class="language-bash">ssh -i ~/my-key.pem root@&lt;your-EIP&gt;
-</code></pre>
-<p class="task"><span class="tid">4.2</span>Install Docker and confirm it:</p>
-<pre><code class="language-bash">curl -fsSL https://get.docker.com | sh
-docker --version
-</code></pre>
-<p class="task"><span class="tid">4.3</span>Now complete section 3 right here on the server.</p>
 <h3>✅ You have finished Milestone 3 when</h3>
 <ul>
 <li>Your personalised badge is in <strong>your own public GitHub repo</strong></li>
@@ -316,8 +329,24 @@ much of that ends up on your server, and why?</p>
 (Alibaba console → your instance → Security Groups → add inbound rules). Caddy
 needs 80 to prove you own the name, and 443 to serve the site. Day 3 explains
 what you just did.</p>
-<p class="task"><span class="tid">6.2</span>Create a free account at <code>hub.docker.com</code>, then sign in from <strong>Docker
-Desktop</strong> (top right). The CLI reuses that login.</p>
+<p class="task"><span class="tid">6.2</span>Set up Docker Hub:</p>
+<ol>
+<li>Create a free account at <code>hub.docker.com</code>, if you don't have one already.</li>
+<li>Open <strong>Docker Desktop</strong> and sign in (top right). The CLI reuses that login
+automatically — no <code>docker login</code> needed in the terminal.</li>
+<li><strong>If Docker Desktop sign-in isn't available on your machine</strong>, log in from the
+terminal instead. Screenshot walkthrough: <a href="../guides/Docker%20Hub%20account%20and%20access%20token%20creation.pdf">Docker Hub account and access
+token creation</a>.<ol>
+<li>On Docker Hub: your avatar → <strong>Account settings</strong> → <strong>Personal access
+tokens</strong> → <strong>Generate new token</strong>.</li>
+<li>Set <strong>Access permissions</strong> to <strong>Read &amp; Write</strong> — the default <em>Read-only</em>
+can't push an image.</li>
+<li>Click <strong>Generate</strong> and copy the token now; it is shown once.</li>
+<li>Run <code>docker login -u &lt;your-dockerhub-username&gt;</code> and paste the token when
+prompted for a password.</li>
+</ol>
+</li>
+</ol>
 <p class="task"><span class="tid">6.3</span>On <strong>your own machine</strong>, build and push:</p>
 <pre><code class="language-bash">docker build --platform linux/amd64 -t &lt;your-dockerhub-username&gt;/cloud-explorer .
 docker push ______/cloud-explorer
@@ -326,7 +355,8 @@ docker push ______/cloud-explorer
 your laptop builds ARM images by default and your server is x86. Without it the
 container refuses to start on the server with an exec-format error.</div></details>
 <p class="task"><span class="tid">6.4</span>On <strong>your server</strong>, pull it and run it. The site serves at your IP with
-the dots turned into dashes, plus <code>.sslip.io</code>:</p>
+the dots turned into dashes, plus <code>.sslip.io</code> — for example, the IP <code>47.253.1.100</code>
+becomes <code>47-253-1-100.sslip.io</code>:</p>
 <pre><code class="language-bash">docker pull &lt;your-dockerhub-username&gt;/cloud-explorer
 
 docker run -d -p 80:80 -p 443:443 \
@@ -342,13 +372,23 @@ certificate for. If the certificate does not appear, port 80 is usually still
 closed.</div></details>
 <hr />
 <h2 id="7-feel-the-pain-then-remove-it">7. Feel the pain, then remove it</h2>
-<p class="task"><span class="tid">7.1</span>Change <code>gradientColors</code> in <code>CONFIG</code> to different colours. Now get that
-one line onto the internet, by hand: commit and push, rebuild the image, push it
-to Docker Hub, SSH in, pull, remove the old container, run the new one.</p>
-<p>That is seven steps for one line. Do it once, deliberately, so the rest of this
-section means something.</p>
-<p class="task"><span class="tid">7.2</span>Add six repository secrets. In your GitHub repo: <strong>Settings → Secrets
-and variables → Actions → New repository secret</strong>.</p>
+<p class="task"><span class="tid">7.1</span>Change <code>gradientColors</code> in <code>CONFIG</code> to different colours, then ship that
+one-line change <strong>by hand</strong>, exactly like section 6:</p>
+<ol>
+<li>Commit and push the change from VS Code.</li>
+<li>Rebuild the image: <code>docker build --platform linux/amd64 -t &lt;your-dockerhub-username&gt;/cloud-explorer .</code></li>
+<li>Push it: <code>docker push &lt;your-dockerhub-username&gt;/cloud-explorer</code></li>
+<li>SSH into your server.</li>
+<li>Pull the new image: <code>docker pull &lt;your-dockerhub-username&gt;/cloud-explorer</code></li>
+<li>Remove the old container: <code>docker rm -f cloud-explorer</code></li>
+<li>Run the new one: <code>docker run -d -p 80:80 -p 443:443 -e SITE_ADDRESS=&lt;your-ip-with-dashes&gt;.sslip.io --name cloud-explorer &lt;your-dockerhub-username&gt;/cloud-explorer</code></li>
+</ol>
+<p>That is seven manual steps for one line. Do them once, deliberately — the rest of
+this section exists because of what you just felt.</p>
+<p class="task"><span class="tid">7.2</span>Add six repository secrets. Screenshot walkthrough:
+<a href="../guides/github-repo-secrets-setup.pdf">GitHub repo Secrets setup guide</a>.
+In your GitHub repo: <strong>Settings → Secrets and variables → Actions → New
+repository secret</strong>.</p>
 <div class="tw"><table>
 <thead>
 <tr>
@@ -431,10 +471,16 @@ old one and your site silently serves yesterday's code.</div></details>
 <h2 id="8-finish-line">8. Finish line</h2>
 <h3>🏆 Milestone 4 — from &quot;push code&quot; to &quot;it's live&quot;, automatically</h3>
 <p class="task"><span class="tid">8.1</span>Commit both completed files, the <code>Dockerfile</code> and <code>deploy.yml</code>.</p>
-<p class="task"><span class="tid">8.2</span>Change <code>gradientColors</code> again, flip <code>isOnCloud</code> to <code>true</code>, then commit
-and push from VS Code.</p>
-<p class="task"><span class="tid">8.3</span>Open the <strong>Actions</strong> tab in your repo and watch both jobs run. When they
-go green, refresh <code>https://&lt;your-ip-with-dashes&gt;.sslip.io</code>.</p>
+<p class="task"><span class="tid">8.2</span>Ship the payoff change:</p>
+<ol>
+<li>Change <code>gradientColors</code> again.</li>
+<li>Flip <code>isOnCloud</code> to <code>true</code>.</li>
+<li>Commit and push from VS Code.</li>
+</ol>
+<p class="task"><span class="tid">8.3</span>Not sure what a passing run should look like?
+<a href="../guides/github-actions-run.png">See an example</a>. Open the <strong>Actions</strong> tab in
+your repo and watch both jobs run. When they go green, refresh
+<code>https://&lt;your-ip-with-dashes&gt;.sslip.io</code>.</p>
 <p><strong>New colours. And you did nothing but push.</strong> 🚀</p>
 <h3>✅ You have finished Milestone 4 when</h3>
 <ul>
