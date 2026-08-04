@@ -79,3 +79,24 @@ reader to install X; if there isn't one, add it.
   ```
 - If the system `python3` fails on `pyexpat` (broken Homebrew build), use
   `/usr/bin/python3` instead.
+
+## Slide PDF export
+
+Chrome's own print dialog reflows a reveal.js deck badly (the fixed brand
+chrome overlaps slide text, cards misalign), so students get a PDF generated
+through Chrome's headless `?print-pdf` export instead, not the print dialog.
+
+- Every day that has real slide content (not the `dayN/index.html` template
+  placeholder) must have a matching `public/dayN.pdf`, committed alongside the
+  deck changes.
+- Regenerate after every edit to that day's `index.html` or its widgets:
+  ```bash
+  cd tools/pdf && npm install   # first time only
+  node tools/pdf/gen_pdfs.mjs dayN
+  ```
+- Each deck's persistent chrome carries a "⭳ PDF" button
+  (`.pdfdl` in `shared/css/course.css`, mounted in `dayN/js/state.js`) linking
+  to `../public/dayN.pdf`. When a new day's placeholder becomes real content,
+  add the same button to its `state.js` and generate its first PDF.
+- Bump the `?v=N` on `course.css` and `state.js` in `dayN/index.html` whenever
+  either file changes, per the versioning convention above.
