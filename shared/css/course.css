@@ -150,6 +150,21 @@ textarea { width: 100%; resize: vertical; line-height: 1.4; }
 .brandmark .logo { height: 40px; width: auto; mix-blend-mode: multiply; }
 .dayflag { position: fixed; top: 24px; right: 28px; z-index: 40; font-family: var(--mono);
   font-size: 11px; letter-spacing: .18em; color: var(--muted); pointer-events: none; }
+.pdfdl { position: fixed; top: 50px; right: 28px; z-index: 40; font-family: var(--mono);
+  font-size: 11px; letter-spacing: .1em; color: var(--petrol); text-decoration: none;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  padding: .28em .8em; }
+.pdfdl:hover { border-color: var(--petrol); }
+
+/* ---- PDF export (headless print-to-pdf on ?print-pdf) ------------------- */
+/* Reveal's PDF plugin moves each <section> into a fresh .pdf-page wrapper,
+   so it stops being a direct child of .slides and the "> section" safe-zone
+   padding above no longer matches. The fixed brandmark/dayflag would then
+   repeat, unclipped, at the same spot on every exported page and sit on top
+   of the slide's own kicker line, so hide them for the PDF and give the
+   slide back a top margin instead. */
+html.print-pdf .brandmark, html.print-pdf .dayflag, html.print-pdf .pdfdl { display: none !important; }
+html.print-pdf .reveal .slides section { padding-top: 34px !important; }
 
 /* ---- week / schedule table ---------------------------------------------- */
 table.week { border-collapse: collapse; width: 100%; font-size: .74em; }

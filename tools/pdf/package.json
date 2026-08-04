@@ -1,0 +1,9 @@
+{
+  "name": "cloud-course-pdf-tool",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tool: renders dayN/index.html decks to public/dayN.pdf",
+  "dependencies": {
+    "puppeteer-core": "^24"
+  }
+}

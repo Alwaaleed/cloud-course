@@ -43,8 +43,11 @@ MAJAL.logoIMG = function () {
 MAJAL.mountChrome = function () {
   var b = MAJAL.el("div", { class: "brandmark", html: MAJAL.logoIMG() });
   var d = MAJAL.el("div", { class: "dayflag", text: "DAY 2 · THE FIRST DEPLOY" });
+  var p = MAJAL.el("a", { class: "pdfdl", href: "../public/day2.pdf", download: "",
+    title: "Download these slides as a PDF", html: "&#8681; PDF" });
   document.body.appendChild(b);
   document.body.appendChild(d);
+  document.body.appendChild(p);
 };
 
 /* ---- boot -------------------------------------------------------------- */
