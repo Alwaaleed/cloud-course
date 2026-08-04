@@ -37,7 +37,8 @@ MAJAL._runSlide = function (section) {
 
 /* ---- persistent brand chrome (logo lockup + day flag) ------------------- */
 MAJAL.logoIMG = function () {
-  return '<img class="logo" src="../MajalLogo.jpg" alt="Majal — Unlocking your tech horizons">';
+  return '<img class="logo" src="../MajalLogo.jpg" alt="Majal — Unlocking your tech horizons">' +
+         '<a class="backlink" href="../index.html" title="Back to the course">&#8592; Course</a>';
 };
 MAJAL.mountChrome = function () {
   var b = MAJAL.el("div", { class: "brandmark", html: MAJAL.logoIMG() });
