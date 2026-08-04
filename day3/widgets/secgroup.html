@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Security group — send traffic at a port and watch the wall decide</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 320px; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+  .lab { font-size: 12px; color: #42606A; font-weight: 700; }
+  button.sm { padding: 6px 11px; font-size: 12px; }
+  .rule-btn { min-width: 108px; }
+  .rule-btn.off { background: #fff; color: #8AA1A8; border-color: #CDD8DA; }
+  .rule-btn.anyone { background: #1F8F89; color: #fff; border-color: #1F8F89; }
+  .rule-btn.vpc { background: #C89B00; color: #fff; border-color: #C89B00; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <span class="lab">rules</span>
+    <button class="sm rule-btn" id="r22" data-port="22">22 · ...</button><button class="sm rule-btn" id="r80" data-port="80">80 · ...</button><button class="sm rule-btn" id="r443" data-port="443">443 · ...</button>
+    <span class="sep"></span>
+    <span class="lab">from</span>
+    <span id="gFrom">
+      <button class="sm on" data-from="internet">the internet</button><!--
+   --><button class="sm" data-from="vpc">inside the VPC</button>
+    </span>
+  </div>
+  <div class="ctl" style="margin-top:6px">
+    <span class="lab">knock on</span>
+    <span id="gPort">
+      <button class="sm on" data-p="22">:22 SSH</button><!--
+   --><button class="sm" data-p="80">:80 HTTP</button><!--
+   --><button class="sm" data-p="443">:443 HTTPS</button>
+    </span>
+    <span class="sep"></span>
+    <button id="send" class="primary">▶ Send a request</button>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap");
+  var W = 1000, H = 320;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+  var PETROL = "#00567C", TURQ = "#1F8F89", AMBER = "#C89B00", MUTED = "#8AA1A8", RED = "#D64545", INK = "#12333D";
+
+  var PORTS = [22, 80, 443];
+  var SERVICE = { 22: "SSH", 80: "HTTP", 443: "HTTPS" };
+  /* Turki's exact starting rules: 22 and 80 open to anyone, 443 has no rule at all */
+  var rule = { 22: "anyone", 80: "anyone", 443: "off" };
+  var from = "internet", targetPort = 22;
+  var pkt = null, raf = null;
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  function box(x, y, w, h, fill, stroke, r) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+    roundRect(x, y, w, h, r === undefined ? 8 : r); ctx.fill(); ctx.stroke();
+  }
+
+  function senderX() { return 150; }
+  function wallX() { return W * 0.46; }
+  function serverX() { return W * 0.62; }
+  function portY(p) { return 92 + PORTS.indexOf(p) * 66; }
+
+  function ruleColor(state) {
+    return state === "anyone" ? TURQ : (state === "vpc" ? AMBER : "#CDD8DA");
+  }
+
+  function verdict() {
+    var state = rule[targetPort];
+    if (state === "off") return "norule";
+    if (state === "anyone") return "ok";
+    return from === "vpc" ? "ok" : "wrongsource";
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    var wx = wallX(), sx = serverX();
+
+    /* the sender */
+    var fromLabel = from === "internet" ? "THE INTERNET" : "INSIDE THE VPC";
+    box(18, H / 2 - 46, senderX() - 18 - 14, 92, "rgba(31,143,137,.10)", TURQ);
+    txt(fromLabel, 30, H / 2 - 24, "700 11px " + MONO, TURQ);
+    txt(from === "internet" ? "0.0.0.0/0" : "10.0.0.0/16", 30, H / 2, "700 15px " + MONO, INK);
+    txt("knocking on :" + targetPort, 30, H / 2 + 22, "13px " + MONO, "#42606A");
+
+    /* the security-group wall, with a gate per rule */
+    box(wx, 26, 26, H - 52, "rgba(0,86,124,.06)", PETROL, 4);
+    txt("SECURITY", wx + 13, 14, "700 10px " + MONO, PETROL, "center");
+    txt("GROUP", wx + 13, H - 8, "700 10px " + MONO, PETROL, "center");
+    PORTS.forEach(function (p) {
+      var y = portY(p), col = ruleColor(rule[p]);
+      box(wx + 4, y - 15, 18, 30, col, col, 3);
+      txt(":" + p, wx - 8, y, "700 12px " + MONO, "#42606A", "right");
+    });
+
+    /* the server and its listening services */
+    var sw = W - sx - 20;
+    box(sx, 26, sw, H - 52, "rgba(0,86,124,.05)", PETROL);
+    txt("YOUR SERVER", sx + 14, 14, "700 11px " + MONO, PETROL, "center");
+    PORTS.forEach(function (p) {
+      var y = portY(p), reachable = rule[p] === "anyone" || (rule[p] === "vpc" && from === "vpc" && p === targetPort);
+      var lit = pkt && pkt.done && pkt.ok && p === targetPort;
+      txt(SERVICE[p] + "  ·  :" + p, sx + 30, y, "700 13px " + MONO, lit ? TURQ : INK);
+      box(sx + sw - 34, y - 10, 20, 20, rule[p] === "off" ? "#F1F4F4" : (lit ? TURQ : "rgba(31,143,137,.15)"),
+          rule[p] === "off" ? "#CDD8DA" : TURQ, 4);
+    });
+
+    /* the packet in flight */
+    if (pkt) {
+      var col = pkt.state === "dead" ? RED : (pkt.state === "ok" ? TURQ : PETROL);
+      box(pkt.x - 26, pkt.y - 11, 52, 22, col, col, 4);
+      txt(":" + targetPort, pkt.x, pkt.y, "700 10px " + MONO, "#fff", "center");
+      if (pkt.state === "dead") txt("✕", pkt.x, pkt.y - 26, "700 20px " + MONO, RED, "center");
+    }
+  }
+
+  function send() {
+    if (raf) cancelAnimationFrame(raf);
+    var v = verdict(), y = portY(targetPort);
+    var wx = wallX();
+    pkt = { x: senderX() + 20, y: y, state: "fly", done: false, ok: false };
+    var stopAt = v === "ok" ? serverX() + 40 : wx - 6;
+    cap.innerHTML = "…";
+    (function step() {
+      if (pkt.x < stopAt) {
+        pkt.x += Math.max(4, (stopAt - pkt.x) * 0.12);
+        draw(); raf = requestAnimationFrame(step); return;
+      }
+      pkt.x = stopAt; pkt.state = v === "ok" ? "ok" : "dead"; pkt.done = true; pkt.ok = v === "ok";
+      draw(); caption(v); raf = null;
+    })();
+  }
+
+  function caption(v) {
+    var state = rule[targetPort];
+    if (v === "ok") {
+      cap.innerHTML = "<span class='good'>Connected.</span> The rule on <b>:" + targetPort + "</b> allows <b>" +
+        (state === "anyone" ? "0.0.0.0/0 (anyone)" : "10.0.0.0/16 (inside the VPC)") + "</b>, and your traffic " +
+        "from <b>" + (from === "internet" ? "the internet" : "inside the VPC") + "</b> matches. It reaches <b>" +
+        SERVICE[targetPort] + "</b>.";
+    } else if (v === "norule") {
+      cap.innerHTML = "<span class='dngr'>Blocked at the wall.</span> There is <b>no inbound rule</b> for " +
+        "<b>:" + targetPort + "</b> at all — this is exactly Turki's bug. The packet never reaches the server; " +
+        "it dies at the security group. Toggle the <b>:" + targetPort + "</b> rule to open it.";
+    } else {
+      cap.innerHTML = "<span class='dngr'>Blocked at the wall.</span> A rule exists for <b>:" + targetPort +
+        "</b>, but its <b>source</b> is <b>10.0.0.0/16</b> — only traffic from inside the VPC. You are coming " +
+        "from <b>the internet</b>, so it does not match. Port open ≠ reachable; the source column decides who.";
+    }
+  }
+
+  function idle() {
+    cap.innerHTML = "Turki's starting rules: <b>:22</b> and <b>:80</b> open to <b>anyone</b>, <b>:443</b> has " +
+      "<b>no rule</b>. Press <b>Send a request</b> to <b>:443</b> and watch exactly where it dies.";
+  }
+
+  PORTS.forEach(function (p) {
+    var btn = document.getElementById("r" + p);
+    function paint() {
+      var s = rule[p];
+      btn.className = "sm rule-btn " + s;
+      btn.textContent = p + " · " + (s === "off" ? "no rule" : (s === "anyone" ? "0.0.0.0/0" : "VPC only"));
+    }
+    btn.addEventListener("click", function () {
+      rule[p] = rule[p] === "off" ? "anyone" : (rule[p] === "anyone" ? "vpc" : "off");
+      paint(); pkt = null; draw(); idle();
+    });
+    paint();
+  });
+
+  function pick(group, attr, set) {
+    var b = document.getElementById(group).querySelectorAll("button");
+    for (var i = 0; i < b.length; i++) {
+      (function (btn) {
+        btn.addEventListener("click", function () {
+          for (var k = 0; k < b.length; k++) b[k].classList.toggle("on", b[k] === btn);
+          set(btn.dataset[attr]); pkt = null; draw(); idle();
+        });
+      })(b[i]);
+    }
+  }
+  pick("gFrom", "from", function (v) { from = v; });
+  pick("gPort", "p", function (v) { targetPort = +v; });
+
+  document.getElementById("send").addEventListener("click", send);
+
+  window.addEventListener("resize", fit);
+  fit(); idle();
+})();
+</script>
+</body>
+</html>

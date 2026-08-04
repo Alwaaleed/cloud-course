@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CIDR — drag the slash and watch the block change size</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 258px; }
+  .ctl { align-items: center; }
+  input[type=range] { flex: 1; min-width: 220px; accent-color: #00567C; }
+  .nlab { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-weight: 700;
+    color: #00567C; font-size: 14px; min-width: 3.2em; }
+  .probes { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .probe { display: flex; align-items: center; gap: 7px; font-size: 12.5px;
+    border: 1px solid #CDD8DA; border-radius: 999px; padding: 6px 12px; background: #fff; }
+  .probe .ip { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-weight: 700; color: #12333D; }
+  .probe .badge { font-weight: 800; font-size: 11px; letter-spacing: .03em; border-radius: 999px;
+    padding: 2px 9px; }
+  .probe .badge.in { background: rgba(31,143,137,.14); color: #1F8F89; }
+  .probe .badge.out { background: rgba(214,69,69,.12); color: #D64545; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <span class="lab" style="font-size:12px;font-weight:700;color:#42606A">/0</span>
+    <input id="slider" type="range" min="0" max="32" value="24" step="1">
+    <span class="lab" style="font-size:12px;font-weight:700;color:#42606A">/32</span>
+    <span class="sep" style="width:1px;height:22px;background:#D6DEDF;margin:0 4px"></span>
+    <span class="nlab" id="nval">/24</span>
+  </div>
+  <div class="probes" id="probes"></div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap"), nval = document.getElementById("nval");
+  var slider = document.getElementById("slider"), probesEl = document.getElementById("probes");
+  var W = 1000, H = 258;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+  var PETROL = "#00567C", TURQ = "#1F8F89", MUTED = "#8AA1A8", RED = "#D64545", INK = "#12333D";
+
+  var BASE = [192, 168, 1, 0];                 /* the example block's base address */
+  var PROBES = [
+    { ip: [192, 168, 1, 50], label: "192.168.1.50" },
+    { ip: [192, 168, 2, 10], label: "192.168.2.10" },
+    { ip: [10, 0, 0, 5],     label: "10.0.0.5" }
+  ];
+
+  function toInt(o) { return ((o[0] << 24) | (o[1] << 16) | (o[2] << 8) | o[3]) >>> 0; }
+  function toDotted(v) {
+    return [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255].join(".");
+  }
+  function maskFor(n) { return n === 0 ? 0 : (0xFFFFFFFF << (32 - n)) >>> 0; }
+
+  var baseInt = toInt(BASE);
+  var probeInts = PROBES.map(function (p) { return toInt(p.ip); });
+
+  /* build the probe badges once */
+  PROBES.forEach(function (p, i) {
+    var row = document.createElement("div");
+    row.className = "probe";
+    row.innerHTML = "<span class='ip'>" + p.label + "</span><span class='badge' id='pb" + i + "'></span>";
+    probesEl.appendChild(row);
+  });
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  var n = 24;
+
+  /* geometry for the 32-bit strip: 4 octet-groups of 8 bit-cells */
+  function stripGeom() {
+    var left = 20, right = W - 20, top = 78, cellH = 46;
+    var totalW = right - left, groupGap = 16, cellGap = 2;
+    var groupW = (totalW - 3 * groupGap) / 4;
+    var cellW = (groupW - 7 * cellGap) / 8;
+    return { left: left, top: top, cellH: cellH, groupW: groupW, groupGap: groupGap, cellW: cellW, cellGap: cellGap };
+  }
+  function bitX(bitIndex, g) {
+    var group = Math.floor(bitIndex / 8), inGroup = bitIndex % 8;
+    return g.left + group * (g.groupW + g.groupGap) + inGroup * (g.cellW + g.cellGap);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var g = stripGeom();
+
+    /* header: the CIDR notation itself, big and bold */
+    var networkInt = baseInt & maskFor(n);
+    var lastInt = (networkInt | (~maskFor(n) >>> 0)) >>> 0;
+    var count = Math.pow(2, 32 - n);
+
+    txt(BASE.join(".") + "/" + n, 20, 26, "700 17px " + MONO, PETROL);
+    txt("addresses in this block: " + count.toLocaleString(), W - 20, 26, "700 13px " + MONO, MUTED, "right");
+
+    /* octet labels above each group */
+    for (var oct = 0; oct < 4; oct++) {
+      var gx = g.left + oct * (g.groupW + g.groupGap);
+      txt(String(BASE[oct]), gx + g.groupW / 2, g.top - 14, "700 11px " + MONO, "#42606A", "center");
+    }
+
+    /* the 32 bit-cells: network bits (locked) vs host bits (free) */
+    for (var i = 0; i < 32; i++) {
+      var x = bitX(i, g), fixed = i < n;
+      ctx.fillStyle = fixed ? PETROL : "rgba(31,143,137,.22)";
+      ctx.strokeStyle = fixed ? PETROL : TURQ;
+      ctx.lineWidth = 1;
+      roundRect(x, g.top, g.cellW, g.cellH, 3);
+      ctx.fill(); ctx.stroke();
+    }
+
+    /* the boundary marker between fixed and free bits */
+    if (n > 0 && n < 32) {
+      var bx = bitX(n, g) - g.cellGap / 2 - 1;
+      ctx.strokeStyle = "#F2D200"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(bx, g.top - 8); ctx.lineTo(bx, g.top + g.cellH + 8); ctx.stroke();
+    }
+
+    /* legend labels under the strip */
+    var midFixed = n > 0 ? bitX(Math.floor(n / 2), g) : g.left;
+    var midFree = n < 32 ? bitX(n + Math.floor((32 - n) / 2), g) : g.left + 4 * g.groupW;
+    if (n > 2) txt("network — fixed (" + n + " bit" + (n === 1 ? "" : "s") + ")", midFixed, g.top + g.cellH + 22,
+        "700 11px " + MONO, PETROL, "center");
+    if (32 - n > 2) txt("host — free (" + (32 - n) + " bit" + (32 - n === 1 ? "" : "s") + ")", midFree,
+        g.top + g.cellH + 22, "700 11px " + MONO, TURQ, "center");
+
+    /* the resulting range, in plain dotted decimal — the real computation */
+    txt(toDotted(networkInt) + "  →  " + toDotted(lastInt), W / 2, g.top + g.cellH + 46,
+        "700 13px " + MONO, INK, "center");
+
+    return { networkInt: networkInt, count: count };
+  }
+
+  function update() {
+    n = +slider.value;
+    nval.textContent = "/" + n;
+    var r = draw();
+    var mask = maskFor(n);
+    var inCount = 0;
+    PROBES.forEach(function (p, i) {
+      var inside = (probeInts[i] & mask) === r.networkInt;
+      if (inside) inCount++;
+      var b = document.getElementById("pb" + i);
+      b.textContent = inside ? "inside" : "outside";
+      b.className = "badge " + (inside ? "in" : "out");
+    });
+    cap.innerHTML = "<b>/" + n + "</b> locks the first <b>" + n + "</b> bits (network) and leaves <b>" +
+      (32 - n) + "</b> free (host) → <b>" + r.count.toLocaleString() + "</b> address" +
+      (r.count === 1 ? "" : "es") + " in the block, from <b>" + toDotted(r.networkInt) + "</b> to <b>" +
+      toDotted((r.networkInt | (~mask >>> 0)) >>> 0) + "</b>. Drag the slider — bigger <b>/number</b> means a " +
+      "<em>smaller</em>, more specific block. Real IPv4 has 2^32 ≈ 4.3 billion addresses total; this strip is " +
+      "all of them, laid out bit by bit.";
+  }
+
+  slider.addEventListener("input", update);
+  window.addEventListener("resize", fit);
+  fit(); update();
+})();
+</script>
+</body>
+</html>

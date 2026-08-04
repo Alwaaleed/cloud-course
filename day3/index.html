@@ -3,16 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Majal — Cloud Computing Day 3: Day 3 title</title>
+  <title>Majal — Cloud Computing Day 3: Addressing and protection</title>
   <link rel="stylesheet" href="../shared/dist/reset.css">
   <link rel="stylesheet" href="../shared/dist/reveal.css">
   <link rel="stylesheet" href="../shared/css/course.css?v=1">
   <style>
-    /* ---- day-specific slide layouts live here, NOT in course.css --------
-       Build them out of the brand kernel's .card / .callout / var(--petrol)
-       so a new grid still reads as the same deck.  Common ones: */
+    /* ---- day 3 layouts — built from the brand kernel, never added to course.css ---- */
 
-    /* card grid — the workhorse concept slide */
     .k2 { display: grid; gap: 14px; margin-top: .3em; }
     .k2.c2 { grid-template-columns: 1fr 1fr; }
     .k2.c3 { grid-template-columns: repeat(3,1fr); }
@@ -25,7 +22,6 @@
       border-top: 1px dashed var(--line); padding-top: .45em; }
     .k2 .card .ex b { color: var(--petrol); font-weight: 700; }
 
-    /* pipeline / stage strip — a process with N stages, side by side */
     .pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: .55em;
       border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
     .pipe .stg { padding: .75em .85em; border-right: 1px solid var(--line); background: var(--panel); }
@@ -38,47 +34,447 @@
       display: flex; flex-wrap: wrap; gap: .28em; }
     .pipe .stg .tools span { font-family: var(--mono); font-size: .5em; font-weight: 700; letter-spacing: .04em;
       background: rgba(0,86,125,.09); color: var(--petrol); border-radius: 999px; padding: .28em .65em; }
+
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-top: .4em; }
+    .two.wide-l { grid-template-columns: 1.25fr .75fr; }
+    .two.wide-r { grid-template-columns: .8fr 1.2fr; }
+
+    .card.alt { border-top-color: var(--muted); }
+    .card ul { margin: .2em 0 0; padding-left: 1.1em; }
+    .card li { font-size: .64em; color: var(--muted); line-height: 1.55; margin-bottom: .2em; }
+    .card li b { color: var(--petrol); }
+
+    .fill { color: var(--bad); font-weight: 700; }
+    .cmt { color: #7f9aa3; }
+    .codeblock.sm { font-size: .46em; line-height: 1.5; }
+
+    /* a compact reference table — CIDR sizes, ports, whatever the slide needs */
+    .cmds { width: 100%; border-collapse: collapse; font-size: .6em; margin-top: .4em; }
+    .cmds td, .cmds th { padding: .4em .6em; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .cmds th { text-align: left; color: var(--muted); font-size: .92em; text-transform: uppercase;
+      letter-spacing: .04em; }
+    .cmds td:first-child { font-family: var(--mono); font-weight: 700; color: var(--petrol); white-space: nowrap; }
+    .cmds td:last-child { color: var(--muted); }
+    .cmds tr:last-child td { border-bottom: 0; }
+    /* back-of-room legibility for the game lineup — same table, bigger type, banded rows */
+    .cmds.lg { font-size: .76em; }
+    .cmds.lg td, .cmds.lg th { padding: .5em .6em; }
+    .cmds.lg tr:nth-child(even) td { background: rgba(0,86,125,.05); }
+
+    /* Partner lockup — sccc guidelines 04.3 "led by a third party":
+       lead logotype 100%, rectangular sccc endorsement 60% of its height. */
+    .partners { display: flex; align-items: center; gap: 28px; margin-top: 1.5em;
+      border-top: 1px solid var(--line); padding-top: .7em; }
+    .partners .plabel { font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--muted); }
+    .partners img.azm  { height: 60px; width: auto; }
+    .partners img.sccc { height: 36px; width: auto; }
+    .partners.sm { margin-top: .7em; padding-top: .5em; gap: 20px; }
+    .partners.sm img.azm  { height: 40px; }
+    .partners.sm img.sccc { height: 24px; }
+
+    /* Back to the course landing page. The brandmark is pointer-events:none,
+       so the link has to opt back in. */
+    .brandmark .backlink { pointer-events: auto; font-family: var(--mono); font-size: 11px;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none;
+      border: 1px solid var(--line); border-radius: 3px; padding: .4em .75em; background: #fff;
+      transition: color .12s, border-color .12s; }
+    .brandmark .backlink:hover { color: var(--petrol); border-color: var(--petrol); }
   </style>
 </head>
 <body>
 <div class="reveal">
   <div class="slides">
 
-    <!-- ================= TITLE ================= -->
-    <section>
-      <p class="kicker">Day 3 · Day 3 title</p>
-      <h1>A sentence that states<br>today's real question.</h1>
-      <p class="sub" style="margin-top:1.2em;max-width:27em">Two or three lines that name what changes for the
-      learner today and what they will be able to do by the end. Not an agenda — a promise.</p>
-      <aside class="notes">Presenter: how to open, what to land in the first two minutes, what NOT to let this
-      become.</aside>
-    </section>
+    <!-- ============================================================ SESSION 1 -->
 
-    <!-- ================= FOUNDATIONS ================= -->
-    <!-- A BLOCK of slides, not a token on-ramp. List what the rest of the day
-         silently assumes, then teach each load-bearing piece. -->
     <section>
-      <p class="kicker">Foundations · the substrate</p>
-      <h2>The model everything today rests on</h2>
-      <div class="k2 c3">
-        <div class="card"><h3>Piece one <span class="tag">term</span></h3>
-          <p>What it is, in the learner's language.</p>
-          <span class="ex">Concretely: <b>a worked example</b>.</span></div>
-        <div class="card"><h3>Piece two <span class="tag">term</span></h3><p>…</p></div>
-        <div class="card"><h3>Piece three <span class="tag">term</span></h3><p>…</p></div>
+      <p class="kicker">Day 3 · Session 1 — Addressing: how the internet finds your server</p>
+      <h1>Your badge is live.<br>How does anyone actually find it?</h1>
+      <p class="sub" style="margin-top:1.05em;max-width:31em">A browser on the other side of the world has to
+      find your one server among billions of machines. Today is about addresses — <b>IP addresses, subnets,
+      CIDR, and DNS</b> — the postal system of the internet. No building today: sit back, this one is all
+      theory.</p>
+      <div class="partners">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
       </div>
-      <div class="callout" style="margin-top:.75em">The one sentence you want them to carry forward.</div>
-      <aside class="notes">Presenter notes.</aside>
+      <aside class="notes">Presenter: tell the room up front this is a think day, not a build day — no lab, no
+      console work. Yesterday's badge stays exactly as it is. Land the promise: by the end they can read any
+      CIDR block on sight and explain how a DNS name finds their server.</aside>
     </section>
 
-    <!-- ================= INTERACTIVE ================= -->
     <section>
-      <p class="kicker">Section · one-line context</p>
-      <h2>A single-line title that names the mechanism</h2>
+      <p class="kicker">The day · four ideas</p>
+      <h2>From one machine's address to a name anyone can type</h2>
+      <div class="pipe">
+        <div class="stg"><div class="num">Idea 1</div><h3>IP addresses & subnets</h3>
+          <div class="q">Every machine has a unique number. Subnets group nearby machines into neighborhoods.</div>
+          <div class="tools"><span>IPv4</span><span>subnet</span></div></div>
+        <div class="stg"><div class="num">Idea 2</div><h3>CIDR notation</h3>
+          <div class="q">A slash-number that names a whole block of addresses at once.</div>
+          <div class="tools"><span>/24</span><span>/16</span></div></div>
+        <div class="stg"><div class="num">Idea 3</div><h3>RFC1918</h3>
+          <div class="q">Three address ranges reserved for private networks — never on the public internet.</div>
+          <div class="tools"><span>10.0.0.0/8</span><span>192.168.0.0/16</span></div></div>
+        <div class="stg"><div class="num">Idea 4</div><h3>DNS</h3>
+          <div class="q">Names instead of numbers. How your badge got a hostname for free.</div>
+          <div class="tools"><span>dig</span><span>sslip.io</span></div></div>
+      </div>
+      <div class="callout" style="margin-top:.9em">All four ideas build on each other in order — keep this strip
+      in mind as we go.</div>
+      <aside class="notes">Presenter: this strip is the spine of the session. Come back to it once before the
+      task slide so nobody loses the thread.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · every machine has an address</p>
+      <h2>An IP address is a street address for a machine</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>IP address <span class="tag">IPv4</span></h3>
+          <p>A unique number identifying a machine on a network. The common form is four numbers, each
+          0–255.</p>
+          <span class="ex">Example: <b>47.253.1.100</b> — that could be yesterday's server.</span></div>
+        <div class="card"><h3>Subnet <span class="tag">neighborhood</span></h3>
+          <p>A group of addresses that can talk to each other directly, without leaving the neighborhood. Your
+          server's <b>vSwitch</b> from Day 1 is a subnet.</p></div>
+        <div class="card"><h3>Network vs host</h3>
+          <p>Every address splits into two parts: the <b>network</b> part (which neighborhood) and the
+          <b>host</b> part (which house in it).</p></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">Everything else today — CIDR, RFC1918, even DNS — is built
+      on top of this one split: network part, then host part.</div>
+      <aside class="notes">Presenter: land "network part, host part" as a phrase they'll hear again in five
+      minutes. Don't rush this — it is the substrate the whole session rests on.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · writing a range of addresses</p>
+      <h2>CIDR: one slash-number names a whole block</h2>
+      <div class="two wide-l">
+        <div>
+          <p class="sub" style="font-size:.68em;max-width:none"><b>CIDR notation</b> describes a block of
+          addresses with a slash number, like <b class="mono">192.168.0.0/24</b>. The number after the
+          <b class="mono">/</b> says how many bits are <b>fixed</b> as the network part. The rest are free for
+          hosts. An IPv4 address is 32 bits total.</p>
+          <table class="cmds">
+            <tr><th>CIDR</th><th>Fixed bits</th><th>Free bits</th><th>Addresses</th></tr>
+            <tr><td>/32</td><td>32</td><td>0</td><td>1 (a single host)</td></tr>
+            <tr><td>/24</td><td>24</td><td>8</td><td>256</td></tr>
+            <tr><td>/16</td><td>16</td><td>16</td><td>65,536</td></tr>
+            <tr><td>/8</td><td>8</td><td>24</td><td>16,777,216</td></tr>
+            <tr><td>/0</td><td>0</td><td>32</td><td>the entire internet</td></tr>
+          </table>
+        </div>
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card alt"><h3>Rule of thumb</h3>
+            <p>Free host bits = <b class="mono">32 − /number</b>. Addresses = <b class="mono">2^(free bits)</b>.
+            Bigger <b class="mono">/number</b> = <em>smaller</em>, more specific block.</p></div>
+          <div class="card"><h3>Reading a block</h3>
+            <p><b class="mono">192.168.0.0/24</b> means "addresses <b class="mono">192.168.0.0</b> through
+            <b class="mono">192.168.0.255</b>" — the first three numbers locked, the last free.</p></div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: work through /24 out loud before the widget — "24 fixed, 8 free, 2^8=256"
+      — so the slider on the next slide is confirming a calculation they already did, not introducing a new
+      one.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">CIDR · drag the slash, watch the block resize</p>
+      <h2>Bigger /number, smaller block — feel it, don't just memorize it</h2>
       <iframe class="wframe" style="height:566px"
-              src="widgets/my_widget.html?v=1"
-              title="What it is" scrolling="auto"></iframe>
-      <aside class="notes">Presenter: what to click, in what order, and what the room should conclude.</aside>
+              src="widgets/cidr.html?v=1"
+              title="CIDR — drag the slash and watch the block change size" scrolling="no"></iframe>
+      <aside class="notes">Presenter: start at /24, then drag to /8 and /32 and pause at each — read the address
+      count and the network→last range out loud. Then watch the three probe IPs flip between inside/outside as
+      you drag; that flip is exactly what Noura's drills ask them to compute on paper.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · addresses that never leave the building</p>
+      <h2>RFC1918: three ranges reserved for private networks</h2>
+      <div class="two">
+        <div class="codeblock">10.0.0.0/8         <span class="cmt">(10.x.x.x)</span>
+172.16.0.0/12      <span class="cmt">(172.16.x.x – 172.31.x.x)</span>
+192.168.0.0/16     <span class="cmt">(192.168.x.x)</span></div>
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card"><h3>Exactly three ranges</h3>
+            <p>Memorize them — you will see them everywhere. Your VPC's CIDR block comes from one of these.</p></div>
+          <div class="card alt"><h3>Private ≠ reachable</h3>
+            <p>Your server has a <b>private IP</b> from one of these ranges (used inside the VPC) and the
+            <b>public EIP</b> you attached on Day 1 (used from the internet). That is why the EIP was needed —
+            the private address alone can't be reached from outside.</p></div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: point straight back at Day 1's EIP step. This is the "why" for a decision
+      they made on faith three days ago.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · names instead of numbers</p>
+      <h2>DNS is the internet's phone book</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>DNS <span class="tag">translator</span></h3>
+          <p>Nobody remembers <b class="mono">47.253.1.100</b>. DNS (Domain Name System) translates human names
+          into IP addresses.</p>
+          <span class="ex"><b class="mono">badge.example.com</b> —DNS lookup→ <b class="mono">47.253.1.100</b></span></div>
+        <div class="card"><h3>sslip.io <span class="tag">the trick you already used</span></h3>
+          <p><b class="mono">&lt;ip-with-dashes&gt;.sslip.io</b> answers any lookup with the IP baked into the
+          name itself. That is how your badge got a real hostname — and HTTPS — with zero DNS setup on Day 2.</p></div>
+        <div class="card"><h3>Watch a lookup happen</h3>
+          <p>Run this from any terminal — no server needed:</p>
+          <span class="ex"><b class="mono">nslookup github.com</b><br><b class="mono">dig +short github.com</b></span></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">The DNS record on your badge's certificate is Caddy — from
+      Day 2 — proving to the world it owns that name before it hands you a padlock.</div>
+      <aside class="notes">Presenter: run <b class="mono">dig +short github.com</b> live on the projector — the
+      raw IP printing out is the whole concept in one command.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · Noura's CIDR drills</p>
+      <h2>Fast recall — work these from the rule of thumb, no tools</h2>
+      <div class="codeblock sm">1. How many addresses are in 10.0.0.0/16 ?                         →  <span class="fill">______</span>
+2. How many addresses are in 172.20.5.0/24 ?                       →  <span class="fill">______</span>
+3. Is 192.168.1.50 inside the block 192.168.1.0/24 ?  (yes/no)     →  <span class="fill">______</span>
+4. Is 10.5.0.1 a private (RFC1918) address?  (yes/no)              →  <span class="fill">______</span>
+5. Which is a bigger block: /20 or /24 ?                           →  <span class="fill">______</span></div>
+      <div class="callout" style="margin-top:.6em">Hint: addresses in a block = <b class="mono">2^(32 −
+      /number)</b>. For "is this IP inside?", check whether the fixed network part matches.</div>
+      <aside class="notes">Presenter: work these live, cold-call the room. Answers: (1) 2^16 = 65,536.
+      (2) 2^8 = 256. (3) yes — same first three octets. (4) yes — falls in 10.0.0.0/8. (5) /20 is bigger —
+      fewer fixed bits, 2^12=4,096 addresses vs 2^8=256 for /24.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Session 1 · done</p>
+      <h2>You can read a CIDR block and explain where your server's names come from</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>Addresses & subnets</h3><p>Every machine has a unique IP; subnets group nearby
+          ones into neighborhoods.</p></div>
+        <div class="card"><h3>CIDR, cold</h3><p>Given any <b class="mono">/number</b>, you can compute the block
+          size and read its range without a calculator.</p></div>
+        <div class="card"><h3>After the break</h3><p>You'll build the network pieces themselves — a VPC, a
+          subnet, and the security-group rule you opened on faith on Day 2.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.9em">🎮 <b>Kahoot:</b> Day 3 · Session 1 — IP addresses, CIDR
+      math, RFC1918 ranges, and DNS.</div>
+      <aside class="notes">Presenter: end on the debt from Day 2 — "you opened ports 80 and 443 on faith, next
+      session explains exactly what that rule was."</aside>
+    </section>
+
+    <!-- ============================================================ SESSION 2 -->
+
+    <section>
+      <p class="kicker">Day 3 · Session 2 — VPCs & protection</p>
+      <h1>The security-group rule you opened on faith.<br>Now you'll understand it.</h1>
+      <p class="sub" style="margin-top:1.05em;max-width:31em">Still a think day — no lab, nothing to build. You
+      will understand exactly how your VPC, your subnet, and the firewall around your server fit together, and
+      finally know what those two rules from Day 2 actually did.</p>
+      <aside class="notes">Presenter: promise the payoff explicitly — "the thing you clicked without knowing why
+      on Day 2, you'll be able to explain by the end of this."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · the network you already have, named properly</p>
+      <h2>VPC, then vSwitch — the same nesting as CIDR</h2>
+      <div class="two wide-l">
+        <div>
+          <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+            <div class="card"><h3>VPC <span class="tag">Virtual Private Cloud</span></h3>
+              <p>Your own private, walled-off network inside Alibaba's cloud. You pick its address range — a
+              CIDR block, like <b class="mono">192.168.0.0/16</b>. Nothing outside gets in unless you allow
+              it.</p></div>
+            <div class="card"><h3>vSwitch <span class="tag">subnet</span></h3>
+              <p>A subnet inside the VPC — a smaller CIDR slice that lives in one Availability Zone. Your server
+              plugs into a vSwitch.</p></div>
+          </div>
+        </div>
+        <div class="codeblock">VPC  192.168.0.0/16   <span class="cmt">(your whole private network)</span>
+ └── vSwitch  192.168.1.0/24   <span class="cmt">(a subnet in Zone A)</span>
+       ← your ECS instance lives here</div>
+      </div>
+      <div class="callout" style="margin-top:.7em">This is the exact nesting from the CIDR slider last session —
+      a bigger block containing a smaller, more specific one.</div>
+      <aside class="notes">Presenter: this is the layout they inspected on Day 1 without a name for it. Say that
+      explicitly — "the default VPC and vSwitch your instance launched into, this is what those were."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · the firewall around your server</p>
+      <h2>A security group is a list of rules: port, protocol, source</h2>
+      <div class="two">
+        <div>
+          <p class="sub" style="font-size:.68em;max-width:none">A <b>security group</b> is a firewall wrapped
+          around your instance — a list of rules saying which traffic is allowed <b>in</b> (inbound) and
+          <b>out</b> (outbound). By default, almost everything inbound is blocked, which is why a brand-new
+          server is unreachable until you open something.</p>
+          <div class="callout hot" style="margin-top:.6em"><b>This is the thing you opened on Day 2.</b> The
+          inbound rules for <b class="mono">80</b> and <b class="mono">443</b> were exactly this.</div>
+        </div>
+        <table class="cmds">
+          <tr><th>Rule part</th><th>Example</th><th>Meaning</th></tr>
+          <tr><td>Port</td><td class="mono">443</td><td>Which "door" — see ports, next slide</td></tr>
+          <tr><td>Protocol</td><td class="mono">TCP</td><td>The kind of traffic</td></tr>
+          <tr><td>Source</td><td class="mono">0.0.0.0/0</td><td>Who's allowed — <b class="mono">0.0.0.0/0</b> =
+            anyone (that <b class="mono">/0</b> from last session!)</td></tr>
+        </table>
+      </div>
+      <aside class="notes">Presenter: tie <b class="mono">0.0.0.0/0</b> straight back to the CIDR slider — same
+      notation, same meaning, "the entire internet."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Security groups · send traffic, watch the wall decide</p>
+      <h2>Same port, different rule — and everything changes</h2>
+      <iframe class="wframe" style="height:566px"
+              src="widgets/secgroup.html?v=1"
+              title="Security group — send traffic at a port and watch the wall decide" scrolling="no"></iframe>
+      <aside class="notes">Presenter: it starts on Turki's exact broken rules. Send to :22 first — it passes.
+      Then send to :443 and let the room watch it die at the wall with no rule at all. Then toggle :443 open and
+      resend. Finally toggle a rule to "VPC only" and send from "the internet" to show port-open ≠
+      reachable.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · the numbered doors on your server</p>
+      <h2>Ports let one machine run many services at once</h2>
+      <table class="cmds">
+        <tr><th>Port</th><th>Service</th></tr>
+        <tr><td>22</td><td>SSH (how you log in)</td></tr>
+        <tr><td>80</td><td>HTTP (plain web)</td></tr>
+        <tr><td>443</td><td>HTTPS (secure web — your badge!)</td></tr>
+      </table>
+      <div class="callout" style="margin-top:.7em">Remember <b class="mono">docker run -p 80:80</b> from Day 2?
+      That was <b>port forwarding</b> — a port on the host connected to a port inside the container. Traffic
+      arriving at the server's door 443 gets forwarded to Caddy inside the container. The security-group rule is
+      what let it arrive at all.</div>
+      <aside class="notes">Presenter: land the two-layer picture — security group decides if traffic reaches the
+      server's door at all; <b class="mono">-p</b> from Day 2 decides which container door it goes through
+      next.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · as apps grow past one server (concept only)</p>
+      <h2>Three ideas you should recognize, not configure this week</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>Load balancer</h3>
+          <p>Sits in front of <b>many</b> servers and spreads incoming traffic across them, so no single one is
+          overwhelmed.</p></div>
+        <div class="card"><h3>Proxy</h3>
+          <p>A middle-man that forwards requests. Caddy is acting as one — forwarding web requests to your
+          files.</p></div>
+        <div class="card"><h3>CDN <span class="tag">Content Delivery Network</span></h3>
+          <p>Copies of your content cached in cities worldwide, so users load it from somewhere nearby and
+          fast.</p></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">💡 On Alibaba these map to <b>SLB</b> (load balancer) and
+      <b>CDN</b> — good to know the names, not something you'll set up this week.</div>
+      <aside class="notes">Presenter: keep this to under two minutes — names to recognize, not a mechanism to
+      teach. Resist the urge to demo SLB.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · fix Turki's locked-out server</p>
+      <h2>He can SSH in fine. Nobody can load the site. Why?</h2>
+      <div class="codeblock sm">Turki's current inbound rules:
+  ┌────────┬──────────┬───────────────┐
+  │  Port  │ Protocol │    Source     │
+  ├────────┼──────────┼───────────────┤
+  │   22   │   TCP    │  0.0.0.0/0    │   ← SSH works
+  │   80   │   TCP    │  0.0.0.0/0    │
+  └────────┴──────────┴───────────────┘
+
+1. Which rule is missing so the browser can load the HTTPS site?
+   Port: <span class="fill">____</span>   Protocol: <span class="fill">____</span>   Source: <span class="fill">____________</span>
+
+2. In one sentence, why can Turki still SSH in even though the site won't load?
+   <span class="fill">________________________________________________</span></div>
+      <div class="callout" style="margin-top:.6em">Hint: he can SSH (port 22) but not load the site (port 443).
+      Which door is missing from the rules? What must the <em>source</em> be for "anyone on the internet"?</div>
+      <aside class="notes">Presenter: answers — (1) Port 443, Protocol TCP, Source 0.0.0.0/0, the rule is simply
+      missing. (2) Each port has its own independent rule; the 22 rule is untouched and still open, so SSH keeps
+      working even though 443 has nothing allowing it.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">🏁 Challenge · pick your own</p>
+      <h2>5 tables, 5 cloud engineers each — no two players, same game</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>1 · Huddle</h3>
+          <p>Each table talks it over and divides up the 9 games from the lineup — one game per player.</p></div>
+        <div class="card alt"><h3>2 · No repeats at your table</h3>
+          <p>All 5 picks at a table must be <b>unique</b>. Two tables can pick the same game; two players at the
+          <b>same</b> table cannot.</p></div>
+        <div class="card"><h3>3 · Deploy</h3>
+          <p>Each engineer pulls and runs <b>their own choice</b> on <b>their own VM</b>, on the port listed for
+          that game.</p></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">🤝 <b>Teammates can help each other</b> — during the
+      challenge, and after finishing your own deploy, go help someone at your table who hasn't. No blaming: this
+      is a fun learning exercise.</div>
+      <div class="callout hot" style="margin-top:.6em"><b>15-minute</b> clock. <b>Winner: the table with the
+      most VMs live in a browser when time's up</b> — first table to <b>5 / 5</b> wins outright.</div>
+      <aside class="notes">Presenter: give tables ~30 seconds to call out who's taking what before moving to the
+      timer slide (next) and pressing Start. No further hints beyond the lineup slide after that. Encourage early
+      finishers to help their table, not just sit idle. Keep the tone light — nobody should feel called out for
+      being slower. Track live count per table (0–5) and call it the moment any table hits 5, or whichever table
+      has the most when the clock runs out.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">🏁 Challenge · the clock</p>
+      <h2>Press start once every table has picked</h2>
+      <iframe class="wframe" style="height:520px"
+              src="widgets/timer.html?v=1"
+              title="Challenge timer — 15 minutes, counting down" scrolling="no"></iframe>
+      <aside class="notes">Presenter: it does not start itself — press ▶ Start only once every table has finished
+      the huddle. Leave this slide up for the full 15 minutes so the room can see it.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">🏁 Challenge · the lineup</p>
+      <h2>Nine games, one port each — find yours below</h2>
+      <table class="cmds lg">
+        <tr><th>Game</th><th>Image</th><th>Port</th></tr>
+        <tr><td>Tetris</td><td class="mono">bsord/tetris:latest</td><td>7603</td></tr>
+        <tr><td>Super Mario</td><td class="mono">pengbai/docker-supermario:latest</td><td>4911</td></tr>
+        <tr><td>Pac-Man</td><td class="mono">nbaillie/pacman:latest</td><td>5962</td></tr>
+        <tr><td>Cats-as-a-Service</td><td class="mono">alialjaffer/caas:latest</td><td>6767</td></tr>
+        <tr><td>2048</td><td class="mono">aashiqq/2048-game:latest</td><td>4857</td></tr>
+        <tr><td>Snake</td><td class="mono">aschil/snake:latest</td><td>5813</td></tr>
+        <tr><td>Clumsy Bird</td><td class="mono">alialjaffer/clumsy-bird:latest</td><td>9042</td></tr>
+        <tr><td>Donkey Kong</td><td class="mono">magicalyak/docker-games:donkeykong</td><td>3319</td></tr>
+        <tr><td>Lion King</td><td class="mono">magicalyak/docker-games:lionking</td><td>8264</td></tr>
+      </table>
+      <div class="callout" style="margin-top:.6em">Hint: <b class="mono">docker pull &lt;your game's image&gt;</b>
+      — nothing else. Same rules as Day 2 and this morning.</div>
+      <aside class="notes">Presenter: this is the reference table — keep it visible or handed out.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Day 3 · done</p>
+      <h2>You can design a VPC, read a security-group rule, and explain why it matters</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>This morning</h3><p>IP addresses, subnets, CIDR math, RFC1918 ranges, and how DNS
+          turns a name into an address.</p></div>
+        <div class="card"><h3>This afternoon</h3><p>VPCs, vSwitches, security-group rules, ports, and the
+          concepts behind load balancing and CDNs.</p></div>
+        <div class="card"><h3>Tomorrow</h3><p>Instead of running everything yourself, you'll let the cloud
+          manage services <b>for</b> you — starting with storage (OSS), then scaling your app on
+          Kubernetes.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.9em">🎮 <b>Kahoot:</b> Day 3 · Session 2 — VPCs, vSwitches,
+      security groups, ports, and load balancing/CDN concepts.</div>
+      <div class="partners sm">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
+      </div>
+      <aside class="notes">Presenter: end on "you now understand every rule you clicked this week without
+      knowing why" — it reframes the whole day as debt repaid, not new homework.</aside>
     </section>
 
   </div>
