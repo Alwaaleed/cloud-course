@@ -37,13 +37,17 @@ MAJAL._runSlide = function (section) {
 
 /* ---- persistent brand chrome (logo lockup + day flag) ------------------- */
 MAJAL.logoIMG = function () {
-  return '<img class="logo" src="../MajalLogo.jpg" alt="Majal — Unlocking your tech horizons">';
+  return '<img class="logo" src="../MajalLogo.jpg" alt="Majal — Unlocking your tech horizons">' +
+         '<a class="backlink" href="../index.html" title="Back to the course">&#8592; Course</a>';
 };
 MAJAL.mountChrome = function () {
   var b = MAJAL.el("div", { class: "brandmark", html: MAJAL.logoIMG() });
-  var d = MAJAL.el("div", { class: "dayflag", text: "DAY 4 · DAY 4 TITLE" });
+  var d = MAJAL.el("div", { class: "dayflag", text: "DAY 4 · KUBERNETES" });
+  var p = MAJAL.el("a", { class: "pdfdl", href: "../public/day4.pdf", download: "",
+    title: "Download these slides as a PDF", html: "&#8681; PDF" });
   document.body.appendChild(b);
   document.body.appendChild(d);
+  document.body.appendChild(p);
 };
 
 /* ---- boot -------------------------------------------------------------- */

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kubernetes control room — desired state, self-healing, and load-balancing</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 340px; }
+  .lab { font-size: 12px; color: #42606A; font-weight: 700; }
+  .stepper { display: inline-flex; align-items: center; gap: 0; border: 1px solid #CDD8DA;
+    border-radius: 999px; overflow: hidden; }
+  .stepper button { border: 0; border-radius: 0; padding: 8px 14px; }
+  .stepper .n { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-weight: 700;
+    font-size: 14px; padding: 0 12px; min-width: 1.4em; text-align: center; color: #12333D; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+  button.kill { background: #fff; color: #D64545; border-color: #D64545; }
+  button.kill:hover { background: #D64545; color: #fff; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <span class="lab">Deployment desired replicas</span>
+    <span class="stepper">
+      <button id="dn">−</button><span class="n" id="nval">3</span><button id="up">+</button>
+    </span>
+    <span class="sep"></span>
+    <button class="kill" id="kill">💥 Kill a random Pod</button>
+    <span class="sep"></span>
+    <button class="primary" id="send">▶ Send 6 requests</button>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap");
+  var nval = document.getElementById("nval");
+  var W = 1000, H = 340;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+  var PETROL = "#00567C", TURQ = "#1F8F89", AMBER = "#C89B00", MUTED = "#8AA1A8", RED = "#D64545", INK = "#12333D";
+
+  var MAXD = 6, MIND = 1;
+  var desired = 3;
+  var pods = [];      // { id, node: 0|1, status: 'starting'|'running'|'terminating', t }
+  var nextId = 1;
+  var packets = [];   // in-flight request dots: { x, y, tx, ty, node, hit }
+  var raf = null, last = null;
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x + r, y); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  function box(x, y, w, h, fill, stroke, r) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+    roundRect(x, y, w, h, r === undefined ? 8 : r); ctx.fill(); if (stroke) ctx.stroke();
+  }
+
+  /* ---- layout ------------------------------------------------------------ */
+  function nodeBox(n) {
+    var gap = 24, nw = (W - 40 - gap) / 2;
+    return { x: 20 + n * (nw + gap), y: 96, w: nw, h: 210 };
+  }
+  function slotPos(n, slot) {
+    var nb = nodeBox(n);
+    var pw = 118, ph = 62, cols = 3, gx = 14, gy = 16;
+    var col = slot % cols, row = Math.floor(slot / cols);
+    var startX = nb.x + (nb.w - (cols * pw + (cols - 1) * gx)) / 2;
+    return { x: startX + col * (pw + gx), y: nb.y + 44 + row * (ph + gy), w: pw, h: ph };
+  }
+  function servicePos() { return { x: W / 2, y: 40 }; }
+
+  function running() { return pods.filter(function (p) { return p.status === "running"; }); }
+
+  /* ---- reconciliation: the control loop ---------------------------------- */
+  function reconcile() {
+    var alive = pods.filter(function (p) { return p.status !== "terminating"; });
+    if (alive.length < desired) {
+      spawnOne();
+    } else if (alive.length > desired) {
+      var victim = alive[alive.length - 1];
+      terminate(victim);
+    }
+  }
+  function nextSlot() {
+    // round-robin: fill node 0, node 1, node 0, ... by count already assigned
+    var counts = [0, 0];
+    pods.forEach(function (p) { if (p.status !== "terminating") counts[p.node]++; });
+    var node = counts[0] <= counts[1] ? 0 : 1;
+    return { node: node, slot: counts[node] };
+  }
+  function spawnOne() {
+    var where = nextSlot();
+    pods.push({ id: nextId++, node: where.node, status: "starting", t: 0 });
+    reflow();
+  }
+  function terminate(p) {
+    p.status = "terminating"; p.t = 0;
+    setTimeout(function () {
+      pods = pods.filter(function (q) { return q !== p; });
+      reflow();
+    }, 480);
+  }
+  function reflow() {
+    // re-pack slot indices per node so pods sit without gaps
+    var counts = [0, 0];
+    pods.forEach(function (p) {
+      if (p.status === "terminating") return;
+      p.slot = counts[p.node]++;
+    });
+  }
+
+  /* ---- interactions -------------------------------------------------------*/
+  function setDesired(n) {
+    desired = Math.max(MIND, Math.min(MAXD, n));
+    nval.textContent = desired;
+    var before = pods.filter(function (p) { return p.status !== "terminating"; }).length;
+    reconcile();
+    var diff = desired - before;
+    if (diff > 0) caption("Desired replicas is now <b>" + desired + "</b>. Kubernetes starts <b>" + diff +
+      "</b> more Pod" + (diff > 1 ? "s" : "") + " to match.");
+    else if (diff < 0) caption("Desired replicas is now <b>" + desired + "</b>. Kubernetes terminates <b>" +
+      (-diff) + "</b> Pod" + (-diff > 1 ? "s" : "") + " to match.");
+    else idle();
+  }
+  function killRandom() {
+    var alive = running();
+    if (!alive.length) { caption("No Running Pods to kill yet."); return; }
+    var victim = alive[Math.floor(Math.random() * alive.length)];
+    caption("💥 <b>pod-" + victim.id + "</b> killed. Current (" + (alive.length - 1) + ") < desired (" +
+      desired + ") — Kubernetes notices and starts a replacement.");
+    terminate(victim);
+    setTimeout(function () {
+      reconcile();
+      setTimeout(function () {
+        if (running().length === desired) {
+          caption("✅ A new Pod is <b>Running</b> again. Desired: <b>" + desired + "</b> · Running: <b>" +
+            desired + "</b>. Nobody had to click anything.");
+        }
+      }, 700);
+    }, 500);
+  }
+  function sendRequests() {
+    var alive = running();
+    if (!alive.length) { caption("No Running Pods to send traffic to."); return; }
+    var sp = servicePos();
+    for (var i = 0; i < 6; i++) {
+      (function (delay) {
+        setTimeout(function () {
+          var target = alive[Math.floor(Math.random() * alive.length)];
+          var sl = slotPos(target.node, target.slot || 0);
+          packets.push({ x: sp.x, y: sp.y + 18, tx: sl.x + sl.w / 2, ty: sl.y + sl.h / 2,
+            t: 0, target: target, hit: false });
+        }, delay);
+      })(i * 160);
+    }
+    caption("▶ 6 requests sent through the <b>Service</b> — it round-robins across the " + alive.length +
+      " <b>Running</b> Pod" + (alive.length > 1 ? "s" : "") + " only. This is exactly why refreshing " +
+      "<b>nginxdemos/hello</b> in the lab shows a different Pod hostname each time.");
+  }
+
+  function caption(html) { cap.innerHTML = html; }
+  function idle() {
+    caption("Desired: <b>" + desired + "</b> · Running: <b>" + running().length + "</b>. Drag the stepper, " +
+      "kill a Pod, or send requests — watch the Deployment keep reality matching what you asked for.");
+  }
+
+  /* ---- draw ---------------------------------------------------------------*/
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Service
+    var sp = servicePos();
+    box(sp.x - 130, sp.y - 20, 260, 40, "rgba(0,86,124,.08)", PETROL, 20);
+    txt("SERVICE  ·  one address", sp.x, sp.y, "700 13px " + MONO, PETROL, "center");
+
+    // Deployment readout
+    var alive = pods.filter(function (p) { return p.status !== "terminating"; }).length;
+    var matched = alive === desired && !pods.some(function (p) { return p.status === "starting"; });
+    txt("DEPLOYMENT badge", 20, 20, "700 11px " + MONO, MUTED, "left");
+    txt("desired " + desired + "  ·  current " + alive, 20, 36, "700 12px " + MONO,
+      matched ? TURQ : AMBER, "left");
+
+    // fan lines from Service to each node
+    [0, 1].forEach(function (n) {
+      var nb = nodeBox(n);
+      ctx.strokeStyle = "rgba(0,86,124,.25)"; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(sp.x, sp.y + 20);
+      ctx.lineTo(nb.x + nb.w / 2, nb.y);
+      ctx.stroke();
+    });
+
+    // Nodes
+    [0, 1].forEach(function (n) {
+      var nb = nodeBox(n);
+      box(nb.x, nb.y, nb.w, nb.h, "rgba(0,86,124,.04)", "#CDD8DA", 8);
+      txt("NODE " + (n === 0 ? "A" : "B"), nb.x + nb.w / 2, nb.y + 20, "700 12px " + MONO, PETROL, "center");
+    });
+
+    // Pods
+    pods.forEach(function (p) {
+      var sl = slotPos(p.node, p.slot || 0);
+      var col = p.status === "running" ? TURQ : (p.status === "starting" ? AMBER : RED);
+      var alpha = p.status === "terminating" ? Math.max(0, 1 - p.t / 480) : 1;
+      ctx.save(); ctx.globalAlpha = alpha;
+      box(sl.x, sl.y, sl.w, sl.h, col, col, 8);
+      txt("pod-" + p.id, sl.x + sl.w / 2, sl.y + sl.h / 2 - 9, "700 12px " + MONO, "#fff", "center");
+      var label = p.status === "running" ? "Running" : (p.status === "starting" ? "Starting…" : "Terminating");
+      txt(label, sl.x + sl.w / 2, sl.y + sl.h / 2 + 11, "600 10px " + MONO, "#fff", "center");
+      ctx.restore();
+    });
+
+    // in-flight request packets
+    packets.forEach(function (pkt) {
+      var col = pkt.hit ? TURQ : PETROL;
+      box(pkt.x - 8, pkt.y - 8, 16, 16, col, col, 8);
+    });
+  }
+
+  function step(now) {
+    if (last === null) last = now;
+    var dt = now - last; last = now;
+
+    pods.forEach(function (p) {
+      p.t += dt;
+      if (p.status === "starting" && p.t > 550) { p.status = "running"; p.t = 0; }
+    });
+
+    packets = packets.filter(function (pkt) {
+      pkt.t += dt / 260;
+      pkt.x = pkt.x + (pkt.tx - pkt.x) * Math.min(1, pkt.t);
+      pkt.y = pkt.y + (pkt.ty - pkt.y) * Math.min(1, pkt.t);
+      if (pkt.t >= 1 && !pkt.hit) pkt.hit = true;
+      return pkt.t < 1.4;
+    });
+
+    draw();
+    raf = requestAnimationFrame(step);
+  }
+
+  document.getElementById("up").addEventListener("click", function () { setDesired(desired + 1); });
+  document.getElementById("dn").addEventListener("click", function () { setDesired(desired - 1); });
+  document.getElementById("kill").addEventListener("click", killRandom);
+  document.getElementById("send").addEventListener("click", sendRequests);
+
+  window.addEventListener("resize", fit);
+
+  for (var i = 0; i < desired; i++) { pods.push({ id: nextId++, node: i % 2, slot: Math.floor(i / 2), status: "running", t: 0 }); }
+  reflow();
+  fit(); idle();
+  raf = requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>

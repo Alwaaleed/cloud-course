@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 4 — Deploy and scale on Kubernetes</title>
+<style>
+:root{
+  --petrol:#00567d; --petrol-d:#003f5e; --teal:#1f8f89; --turq:#33d2cb;
+  --yellow:#f2d200; --ink:#12333d; --slate:#2f4f59; --muted:#5c7880;
+  --bg:#f6f8f8; --bg-2:#eef3f3; --card:#fff; --line:#e0e7e8;
+  --code-bg:#0f2b34; --code-ink:#dff3f2;
+  --sans:"Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono","Cascadia Code","SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:84px}
+body{margin:0; font-family:var(--sans); color:var(--ink); background:var(--bg);
+  -webkit-font-smoothing:antialiased; line-height:1.6}
+
+/* ---- top bar ---- */
+.bar{position:sticky; top:0; z-index:30; background:rgba(246,248,248,.94);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.bar .in{max-width:1240px; margin:0 auto; padding:10px 26px; display:flex;
+  align-items:center; gap:16px}
+.bar img{height:34px; width:auto; mix-blend-mode:multiply}
+.bar .crumb{font-size:12px; font-weight:800; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--teal)}
+.bar .spacer{flex:1}
+.bar a.back{font-size:13px; font-weight:700; color:var(--petrol); text-decoration:none;
+  border:1px solid var(--line); background:var(--card); padding:.45em 1em; border-radius:2px}
+.bar a.back:hover{border-color:var(--petrol)}
+
+/* ---- hero ---- */
+.hero{max-width:1240px; margin:0 auto; padding:52px 26px 30px}
+.hero .kicker{margin:0 0 12px; font-size:13px; font-weight:800; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--teal)}
+.hero h1{margin:0; font-size:clamp(32px,5vw,54px); line-height:1.05; letter-spacing:-.02em;
+  color:var(--petrol); font-weight:800; max-width:18ch}
+.hero .rule{width:72px; height:6px; border-radius:3px; background:var(--yellow); margin:22px 0 22px}
+.meta{display:flex; flex-wrap:wrap; gap:10px; margin:0; padding:0; list-style:none}
+.meta li{background:var(--card); border:1px solid var(--line); border-left:3px solid var(--turq);
+  padding:.5em .9em; border-radius:2px}
+.meta .k{display:block; font-size:10.5px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted)}
+.meta .v{font-size:14px; font-weight:700; color:var(--slate)}
+
+/* ---- layout ---- */
+.layout{max-width:1240px; margin:0 auto; padding:14px 26px 80px;
+  display:grid; grid-template-columns:236px minmax(0,1fr); gap:44px; align-items:start}
+.toc{position:sticky; top:78px; max-height:calc(100vh - 100px); overflow-y:auto;
+  border-left:2px solid var(--line); padding-left:16px}
+.toc-h{margin:0 0 10px; font-size:11px; font-weight:800; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted)}
+.toc ul{list-style:none; margin:0; padding:0}
+.toc li{margin:0}
+.toc a{display:block; padding:3px 0; font-size:13.5px; line-height:1.35; color:var(--muted);
+  text-decoration:none}
+.toc a:hover{color:var(--petrol)}
+.toc .l1 a{margin-top:12px; font-weight:800; font-size:12px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--petrol)}
+.toc .l2 a{padding-left:2px}
+
+/* ---- content ---- */
+.doc{min-width:0; max-width:78ch}
+.doc h1{margin:0; font-size:clamp(24px,3.2vw,32px); font-weight:800; letter-spacing:-.02em;
+  color:var(--petrol)}
+
+/* session break — where the morning lab stops and the afternoon lab starts */
+.sbreak{margin:64px 0 8px; padding:20px 24px 22px; background:var(--card);
+  border:1px solid var(--line); border-top:5px solid var(--yellow); border-radius:2px;
+  box-shadow:0 1px 2px rgba(18,51,61,.04)}
+.sbreak .sbk{display:block; margin-bottom:8px; font-family:var(--mono); font-size:11px;
+  font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:var(--muted)}
+.sbreak .sbk::before{content:"⏸ "; color:var(--yellow)}
+.doc h2{margin:44px 0 4px; font-size:clamp(20px,2.6vw,25px); font-weight:800; letter-spacing:-.01em;
+  color:var(--petrol)}
+.doc h3{margin:30px 0 4px; font-size:16px; font-weight:800; letter-spacing:.02em; color:var(--teal)}
+.doc p{margin:.85em 0; color:var(--slate); font-size:16px}
+.doc hr{border:0; border-top:1px solid var(--line); margin:44px 0}
+.doc a{color:var(--petrol)}
+.doc strong{color:var(--ink)}
+.doc em{color:var(--muted)}
+.doc ul,.doc ol{color:var(--slate); font-size:16px}
+
+/* code */
+.doc code{font-family:var(--mono); font-size:.88em; background:var(--bg-2);
+  border:1px solid var(--line); border-radius:3px; padding:.1em .38em; color:var(--petrol-d)}
+.doc pre{background:var(--code-bg); color:var(--code-ink); border-radius:3px;
+  border-left:4px solid var(--turq); padding:16px 18px; overflow-x:auto; margin:1.1em 0}
+.doc pre code{background:none; border:0; padding:0; color:inherit; font-size:13.5px; line-height:1.55}
+
+/* tables */
+.tw{overflow-x:auto; margin:1.2em 0; border:1px solid var(--line); border-radius:2px; background:var(--card)}
+.doc table{border-collapse:collapse; width:100%; font-size:14px}
+.doc th{text-align:left; font-family:var(--mono); font-size:11px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--teal);
+  background:var(--bg-2); border-bottom:1px solid var(--line); padding:10px 14px; white-space:nowrap}
+.doc td{border-bottom:1px solid var(--line); padding:10px 14px; color:var(--slate);
+  vertical-align:top; line-height:1.5}
+.doc tbody tr:last-child td{border-bottom:0}
+.doc td:first-child{color:var(--petrol); font-weight:700; white-space:nowrap}
+.doc td code{white-space:nowrap}
+
+/* callouts */
+.callout{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--petrol);
+  border-radius:2px; padding:2px 20px; margin:1.3em 0}
+.callout p{font-size:15px}
+
+/* downloadable file button */
+.doc p:has(> a.dl:only-child){margin:.6em 0 1.4em}
+a.dl{display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:800;
+  font-size:14.5px; color:#fff; background:var(--petrol); border-radius:4px; padding:.7em 1.3em;
+  box-shadow:0 2px 8px rgba(0,86,125,.18)}
+a.dl:hover{background:var(--petrol-d)}
+
+/* exercises */
+.doc p.task{position:relative; background:var(--card); border:1px solid var(--line);
+  border-left:4px solid var(--turq); border-radius:2px; padding:14px 18px 14px 74px;
+  margin:1.5em 0 0; font-size:16px; color:var(--ink)}
+.tid{position:absolute; left:16px; top:15px; font-family:var(--mono); font-weight:800; font-size:13px;
+  color:var(--petrol); background:var(--bg-2); border-radius:2px; padding:.25em .55em; letter-spacing:.02em}
+details.hint{margin:0 0 .2em; border:1px solid var(--line); border-top:0; background:var(--bg-2);
+  border-radius:0 0 2px 2px; font-size:14.5px}
+details.hint summary{cursor:pointer; list-style:none; padding:.5em 18px; font-weight:700;
+  font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+details.hint summary::-webkit-details-marker{display:none}
+details.hint summary::before{content:"▸ "; color:var(--turq)}
+details[open].hint summary::before{content:"▾ "}
+details.hint summary:hover{color:var(--petrol)}
+.hint-body{padding:0 18px .8em; color:var(--slate); font-style:italic}
+p.wrapup{background:rgba(242,210,0,.14); border:1px solid rgba(242,210,0,.5);
+  border-radius:2px; padding:14px 18px; font-size:15.5px; color:var(--ink)}
+
+footer{border-top:1px solid var(--line); background:var(--bg)}
+.foot{max-width:1240px; margin:0 auto; padding:20px 26px; display:flex; gap:16px;
+  flex-wrap:wrap; justify-content:space-between; font-size:13px; color:var(--muted)}
+.foot .slogan{font-weight:700; color:var(--slate)}
+
+@media (max-width:960px){
+  .layout{grid-template-columns:1fr; gap:0}
+  .toc{position:static; max-height:none; border-left:0; border-top:1px solid var(--line);
+    padding:16px 0 24px; margin-bottom:8px}
+  .toc ul{columns:2; column-gap:24px}
+}
+@media print{
+  .bar,.toc{display:none}
+  body{background:#fff}
+  .layout{display:block; padding:0 0 20px}
+  details.hint{background:#fff}
+  details.hint > .hint-body{display:block !important}
+  .doc h1,.doc h2{break-after:avoid}
+  p.task{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="in">
+    <img src="../MajalLogo.jpg" alt="Majal">
+    <span class="crumb">Day 4 · Lab 4</span>
+    <span class="spacer"></span>
+    <a class="back" href="../index.html">← Course</a>
+  </div>
+</div>
+
+<div class="hero">
+  <p class="kicker">Majal Initiative · Cloud Computing Bootcamp</p>
+  <h1>Lab 4 — Deploy and scale on Kubernetes</h1>
+  <div class="rule"></div>
+  <ul class="meta"><li><span class="k">Duration</span><span class="v">Session 2 only — Session 1 is concepts, no hands-on work</span></li><li><span class="k">Environment</span><span class="v">Alibaba Cloud console — no terminal, no <code>kubectl</code></span></li><li><span class="k">Level</span><span class="v">Beginner</span></li><li><span class="k">Format</span><span class="v">One fill-in task and one milestone, with a hint</span></li></ul>
+</div>
+
+<div class="layout">
+<nav class="toc" aria-label="Lab contents"><p class="toc-h">Contents</p><ul>
+<li class="l2"><a href="#objectives">Objectives</a></li>
+<li class="l2"><a href="#setup">Setup</a></li>
+<li class="l1"><a href="#session-2-deploy-and-scale-on-kubernetes">Session 2 · Deploy and scale on Kubernetes</a></li>
+<li class="l2"><a href="#1-create-your-own-namespace">1. Create your own namespace</a></li>
+<li class="l2"><a href="#2-complete-the-deployment-service-yaml">2. Complete the Deployment &amp; Service YAML</a></li>
+<li class="l2"><a href="#3-deploy-it-and-watch-it-load-balance">3. Deploy it and watch it load-balance</a></li>
+</ul></nav>
+<main class="doc">
+<h2 id="objectives">Objectives</h2>
+<p>By the end of this lab you will have created your own <strong>namespace</strong> on the
+class's shared <strong>ACK</strong> (Alibaba Container Service for Kubernetes) cluster,
+described a <strong>Deployment</strong> and a <strong>Service</strong> in YAML, and deployed the
+<code>nginxdemos/hello</code> demo image as multiple Pods behind a public
+<strong>LoadBalancer</strong> Service — entirely from the Alibaba console. You will watch
+the Service load-balance across your Pods in a browser, scale it up, and
+delete a Pod yourself to see Kubernetes bring it back without you touching
+anything.</p>
+<h2 id="setup">Setup</h2>
+<p>You need an <strong>Alibaba Cloud console login</strong> with access to the shared ACK
+cluster — your instructor will point you to it — and a <strong>browser</strong>. Nothing
+to install: every step today is point-and-click in the console.</p>
+<div class="callout"><p><strong>How to use this lab:</strong> read each task, try to build the answer yourself,
+and open the hint only if you need a nudge. The point is to <em>derive</em> it,
+not to copy it.</p></div>
+<div class="callout"><p><strong>The cluster already exists.</strong> The whole class deploys onto <strong>one shared
+ACK cluster</strong> your instructor provisioned. You are not creating a cluster
+today — only your own <strong>namespace</strong>, a walled-off area inside it, so your
+Pods don't collide with anyone else's.</p></div>
+<hr />
+<div class="sbreak"><span class="sbk">Session break</span><h1 id="session-2-deploy-and-scale-on-kubernetes">Session 2 · Deploy and scale on Kubernetes</h1></div>
+<div class="callout"><p>Session 1 was concepts only — the problem Kubernetes solves, desired state,
+and the four objects (Pod, Node, Deployment, Service). There's nothing to
+carry forward except being able to name what each of those four does.
+Everything below is hands-on.</p></div>
+<h2 id="1-create-your-own-namespace">1. Create your own namespace</h2>
+<p class="task"><span class="tid">1.1</span>Open the ACK cluster your instructor points you to.</p>
+<p class="task"><span class="tid">1.2</span>Go to <strong>Namespaces and Quotas</strong> → <strong>Create Namespace</strong>.</p>
+<p class="task"><span class="tid">1.3</span>Give it a name unique to you (your first name or GitHub username
+works well) → <strong>OK</strong>.</p>
+<details class="hint"><summary>Hint</summary><div class="hint-body">write this name down exactly. You will paste it into two YAML files
+next, and it must match in both.</div></details>
+<hr />
+<h2 id="2-complete-the-deployment-service-yaml">2. Complete the Deployment &amp; Service YAML</h2>
+<p>Fill in the blanks so this runs <strong>3 copies</strong> of <code>nginxdemos/hello</code> and exposes
+them on port <strong>80</strong> through a public <strong>LoadBalancer</strong>.</p>
+<pre><code class="language-yaml"># deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello
+  namespace: ______ # &lt;-- your namespace from step 1.3
+spec:
+  replicas: ____ # &lt;-- run how many copies?
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
+        app: hello # &lt;-- this label is what the Service looks for
+    spec:
+      containers:
+        - name: hello
+          image: nginxdemos/hello
+          ports:
+            - containerPort: 80
+---
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello
+  namespace: ______ # &lt;-- same namespace as above
+spec:
+  type: ______ # &lt;-- which type gives it a public address?
+  selector:
+    app: ______ # &lt;-- must match the Pod label above
+  ports:
+    - port: 80
+      targetPort: 80
+</code></pre>
+<details class="hint"><summary>Hint</summary><div class="hint-body"><code>replicas</code> is &quot;how many copies&quot; — pick 3. The Service's <code>selector</code>
+must match the Pod's <code>labels</code> (both say <code>app: hello</code>). The type that gives a
+Service a real internet-facing address is <code>LoadBalancer</code>.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> if you left <code>type</code> as the default (<code>ClusterIP</code>)
+instead, would you be able to load the page from your own laptop's browser?
+Why or why not?</p>
+<hr />
+<h2 id="3-deploy-it-and-watch-it-load-balance">3. Deploy it and watch it load-balance</h2>
+<h3>🏆 Milestone 8 — deploy, scale, and self-heal <code>nginxdemos/hello</code></h3>
+<p class="task"><span class="tid">3.1</span><strong>Deployments</strong> → <strong>Create from YAML</strong> → paste your completed
+<code>deployment.yaml</code>.</p>
+<p class="task"><span class="tid">3.2</span><strong>Network → Services</strong> → <strong>Create from YAML</strong> → paste your
+completed <code>service.yaml</code>.</p>
+<p class="task"><span class="tid">3.3</span><strong>Pods</strong> — set the <strong>Namespace</strong> selector at the top to yours.
+Confirm 3 <code>hello</code> Pods show <strong>Running</strong>.</p>
+<p class="task"><span class="tid">3.4</span><strong>Network → Services</strong> — find your <code>hello</code> Service and copy its
+<strong>external address</strong>.</p>
+<p class="task"><span class="tid">3.5</span>Visit that address in a browser. You'll land on the
+<code>nginxdemos/hello</code> page — note the <strong>Server address</strong> and <strong>Server name</strong>
+lines; that's the IP and hostname of the exact Pod that answered you.</p>
+<p class="task"><span class="tid">3.6</span><strong>Refresh the page 4–5 times.</strong> Watch the <strong>Server address</strong> /
+<strong>Server name</strong> lines change. Same Service, same URL — a different Pod
+answering each time. That's the Service load-balancing across your 3 Pods,
+proven on your own screen.</p>
+<p class="task"><span class="tid">3.7</span><strong>Scale it.</strong> Back in <strong>Deployments</strong> (namespace still set to
+yours), find <code>hello</code> → <strong>Scale</strong> → set replicas to <strong>5</strong>. Watch two new Pods
+appear in <strong>Pods</strong>.</p>
+<p class="task"><span class="tid">3.8</span><strong>Self-heal it.</strong> In <strong>Pods</strong> (namespace set to yours), click <strong>⋮</strong>
+next to any one Pod → <strong>Delete</strong> → type &quot;Confirm Deletion&quot; → <strong>OK</strong>. Watch
+the Deployment bring up a replacement within seconds — you deleted a Pod, and
+nobody had to redeploy anything.</p>
+<details class="hint"><summary>Hint</summary><div class="hint-body">if the external address doesn't load yet, give it a minute — a real
+load balancer is being provisioned behind the scenes the first time a
+<code>LoadBalancer</code> Service is created.</div></details>
+<p class="wrapup"><strong>Wrap-up question:</strong> after step 3.7, how many total Pods do you have, and
+which ones (by name) are new?</p>
+<h3>✅ You have finished Milestone 8 when</h3>
+<ul>
+<li>Your own namespace exists, and both YAML files reference it</li>
+<li><code>hello</code> runs as multiple Pods, reachable via the Service's external address</li>
+<li>Refreshing the page shows a different Pod's <strong>Server address</strong> / <strong>Server
+name</strong> at least twice</li>
+<li>You scaled the Deployment to 5 replicas and saw new Pods appear</li>
+<li>You deleted a Pod yourself and watched Kubernetes recreate it</li>
+</ul>
+<h3>🌥️ Fallback</h3>
+<p>No cloud tenant, or the shared cluster is unavailable? Complete the fill-in
+task in section 2 on paper, and walk through the Kahoot for this session —
+the console steps are worth seeing live in class or with a partner who has
+access.</p>
+<h3>Tomorrow</h3>
+<p>You'll level up your Git workflow with branches and pull requests, add a
+build check to your Day 2 pipeline, and start writing the final documentation
+for your whole week's deployment.</p>
+
+</main>
+</div>
+
+<footer>
+  <div class="foot">
+    <span class="slogan">Majal · Unlocking your tech horizons</span>
+    <span>Cloud Computing 2026</span>
+  </div>
+</footer>
+<script>
+/* Highlight the section you're reading in the contents rail. */
+(function () {
+  var links = {}, heads = [];
+  document.querySelectorAll('.toc a').forEach(function (a) {
+    var el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+    if (el) { links[el.id] = a; heads.push(el); }
+  });
+  var current = null;
+  function sync() {
+    var best = null;
+    heads.forEach(function (h) {
+      if (h.getBoundingClientRect().top < 140) best = h;
+    });
+    if (best === current) return;
+    if (current) links[current.id].style.color = '';
+    current = best;
+    if (current) links[current.id].style.color = 'var(--petrol)';
+  }
+  addEventListener('scroll', sync, { passive: true });
+  sync();
+})();
+</script>
+</body>
+</html>
