@@ -1,0 +1,46 @@
+# front-door.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy-front-door
+  namespace: <your-namespace>
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caddy-front-door
+  template:
+    metadata:
+      labels:
+        app: caddy-front-door
+    spec:
+      containers:
+        - name: caddy
+          image: alialjaffer/caddy:latest
+          env:
+            - name: SITE_ADDRESS
+              value: <your-name>.alialjaffer.com
+            - name: SERVICE_NAME
+              value: badge
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy-front-door
+  namespace: <your-namespace>
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: <your-name>.alialjaffer.com
+spec:
+  type: LoadBalancer
+  selector:
+    app: caddy-front-door
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443

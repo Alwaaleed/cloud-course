@@ -1,0 +1,7 @@
+{$SITE_ADDRESS:localhost}
+
+reverse_proxy {$SERVICE_NAME:badge-backend-svc}:80 {
+	transport http {
+		keepalive off
+	}
+}

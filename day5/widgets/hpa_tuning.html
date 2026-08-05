@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HPA scaling behavior — default cooldown vs a tuned behavior block</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+  canvas { height: 336px; }
+  .lab { font-size: 12px; color: #42606A; font-weight: 700; }
+  .sep { width: 1px; height: 22px; background: #D6DEDF; margin: 0 4px; }
+</style>
+</head>
+<body>
+<div class="w">
+  <canvas id="c"></canvas>
+  <div class="ctl">
+    <span class="lab">scaleDown behavior</span>
+    <button class="on" id="modeDefault">Default (300s cooldown)</button>
+    <button id="modeTuned">Tuned (15s)</button>
+    <span class="sep"></span>
+    <button class="primary" id="play">▶ Play load spike</button>
+    <button id="reset">↺ Reset</button>
+  </div>
+  <div class="cap" id="cap"></div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("c"), ctx = canvas.getContext("2d");
+  var cap = document.getElementById("cap");
+  var W = 1000, H = 336;
+  var MONO = "'JetBrains Mono', Menlo, Consolas, monospace";
+  var PETROL = "#00567C", TURQ = "#1F8F89", AMBER = "#C89B00", MUTED = "#8AA1A8", RED = "#D64545", INK = "#12333D";
+
+  var SIM_MAX = 700;        /* real HPA seconds this trace covers */
+  var REAL_MS_TOTAL = 12000; /* played back over 12 real seconds */
+  var WINDOW = { default: 300, tuned: 15 }; /* real scaleDown stabilizationWindowSeconds */
+
+  var mode = "default";
+  var history = [];         /* precomputed once per mode: {t, load, replicas} */
+  var playing = false, revealT = 0, raf = null, last = null;
+
+  /* ---- the real HPA math, at toy scale: same ceil(replicas * load/target)
+     formula the controller actually runs, and the same 50%-per-15s scaleDown
+     rate limit. Only the wall-clock is compressed so you can watch it. ---- */
+  function loadAt(t) {
+    if (t < 40) return 5 + (95 - 5) * (t / 40);
+    if (t < 260) return 95;
+    if (t < 280) return 95 - (95 - 5) * ((t - 260) / 20);
+    return 5;
+  }
+  function simulate(windowSec) {
+    var out = [], recTrace = [];
+    var replicas = 1;
+    for (var t = 0; t <= SIM_MAX; t++) {
+      var load = loadAt(t);
+      var rec = Math.min(10, Math.max(1, Math.ceil(replicas * (load / 50))));
+      recTrace.push(rec);
+      var windowStart = t - windowSec;
+      var windowMax = 1;
+      for (var i = recTrace.length - 1; i >= 0; i--) {
+        var s = t - (recTrace.length - 1 - i);
+        if (s < windowStart) break;
+        windowMax = Math.max(windowMax, recTrace[i]);
+      }
+      if (windowMax > replicas) {
+        replicas = windowMax; /* scaleUp: near-instant, per the default window:0 */
+      } else if (windowMax < replicas) {
+        var maxDecreasePerSec = (0.5 * replicas) / 15; /* scaleDown policy: 50% per 15s */
+        replicas = Math.max(windowMax, replicas - maxDecreasePerSec);
+      }
+      out.push({ t: t, load: load, replicas: replicas });
+    }
+    return out;
+  }
+
+  function fit() {
+    var cssW = canvas.clientWidth || W, dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); W = cssW; draw();
+  }
+  function txt(t, x, y, font, color, align) {
+    ctx.font = font; ctx.fillStyle = color;
+    ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(t, x, y);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+
+  /* ---- layout: two stacked strips sharing one time axis -------------------*/
+  var padL = 44, padR = 14, padTop = 8, gap = 26, padBottom = 26;
+  function stripH() { return (H - padTop - gap - padBottom) / 2; }
+  function loadStrip() { return { x: padL, y: padTop, w: W - padL - padR, h: stripH() }; }
+  function repStrip() { var l = loadStrip(); return { x: padL, y: l.y + l.h + gap, w: l.w, h: l.h }; }
+  function xAt(strip, t) { return strip.x + (t / SIM_MAX) * strip.w; }
+  function yAt(strip, v, maxV) { return strip.y + strip.h - (v / maxV) * strip.h; }
+
+  function drawStrip(strip, maxV, label, unit, color, series, upToT) {
+    ctx.strokeStyle = "#E0E7E8"; ctx.lineWidth = 1;
+    ctx.strokeRect(strip.x, strip.y, strip.w, strip.h);
+    // gridlines + axis labels
+    var steps = 4;
+    for (var g = 0; g <= steps; g++) {
+      var v = (maxV / steps) * g;
+      var y = yAt(strip, v, maxV);
+      ctx.strokeStyle = "rgba(18,51,61,.06)";
+      ctx.beginPath(); ctx.moveTo(strip.x, y); ctx.lineTo(strip.x + strip.w, y); ctx.stroke();
+      txt(Math.round(v) + unit, strip.x - 8, y, "600 10px " + MONO, MUTED, "right");
+    }
+    txt(label, strip.x, strip.y - 4, "700 11px " + MONO, MUTED, "left");
+    // series line, drawn only up to the current reveal point
+    ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.beginPath();
+    var started = false;
+    for (var i = 0; i < series.length; i++) {
+      var pt = series[i];
+      if (pt.t > upToT) break;
+      var x = xAt(strip, pt.t), y = yAt(strip, pt.v, maxV);
+      if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+    }
+    ctx.stroke();
+    // current-value dot
+    if (started) {
+      var lastPt = null;
+      for (var j = 0; j < series.length; j++) { if (series[j].t <= upToT) lastPt = series[j]; else break; }
+      if (lastPt) {
+        var lx = xAt(strip, lastPt.t), ly = yAt(strip, lastPt.v, maxV);
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var ls = loadStrip(), rs = repStrip();
+    var loadSeries = history.map(function (h) { return { t: h.t, v: h.load }; });
+    var repSeries = history.map(function (h) { return { t: h.t, v: h.replicas }; });
+    drawStrip(ls, 100, "CPU LOAD  ·  % of Pod's requested 50m", "%", AMBER, loadSeries, revealT);
+    drawStrip(rs, 10, "REPLICAS  ·  badge Deployment", "", PETROL, repSeries, revealT);
+
+    // shared time axis
+    txt("t = 0s", ls.x, rs.y + rs.h + 16, "600 10px " + MONO, MUTED, "left");
+    txt("t = " + SIM_MAX + "s  (real Kubernetes seconds)", ls.x + ls.w, rs.y + rs.h + 16, "600 10px " + MONO, MUTED, "right");
+
+    // load-drop marker
+    var dropX = xAt(ls, 260);
+    ctx.strokeStyle = "rgba(18,51,61,.18)"; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(dropX, ls.y); ctx.lineTo(dropX, rs.y + rs.h); ctx.stroke();
+    ctx.setLineDash([]);
+    txt("load drops here", dropX + 5, ls.y + 10, "600 9px " + MONO, MUTED, "left");
+  }
+
+  function currentReplicas() {
+    var last = 1;
+    for (var i = 0; i < history.length; i++) { if (history[i].t <= revealT) last = history[i].replicas; else break; }
+    return Math.round(last * 10) / 10;
+  }
+
+  function caption() {
+    var w = WINDOW[mode];
+    var label = mode === "default" ? "Default" : "Tuned";
+    if (!playing && revealT === 0) {
+      cap.innerHTML = "<b>" + label + "</b> scaleDown window: <b>" + w + "s</b>. Press <b>Play load spike</b> — " +
+        "same traffic curve either way, watch how long <em>replicas</em> takes to come back down after load drops.";
+      return;
+    }
+    var reps = currentReplicas();
+    var loadDropped = revealT > 280;
+    var msg;
+    if (!loadDropped) {
+      msg = "ramping up with the load spike.";
+    } else if (reps >= 9.95) {
+      msg = mode === "default"
+        ? "holding at the peak — the <b>300s</b> cooldown hasn't elapsed yet. Nobody touched anything; it's just waiting."
+        : "the <b>15s</b> window already elapsed — watch it start dropping.";
+    } else if (reps > 1.05) {
+      msg = "scaling down now — the same 50%-per-15s rate limit applies either way, only the wait beforehand differs.";
+    } else {
+      msg = "settled back to 1 replica.";
+    }
+    cap.innerHTML = "t=" + Math.round(revealT) + "s · replicas now <b>" + reps + "</b> · " + msg;
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("modeDefault").className = m === "default" ? "on" : "";
+    document.getElementById("modeTuned").className = m === "tuned" ? "on" : "";
+    history = simulate(WINDOW[mode]);
+    caption();
+    draw();
+  }
+
+  function play() {
+    if (playing) return;
+    playing = true; last = null;
+    if (revealT >= SIM_MAX) revealT = 0;
+    raf = requestAnimationFrame(step);
+  }
+  function reset() {
+    playing = false; if (raf) cancelAnimationFrame(raf);
+    revealT = 0; caption(); draw();
+  }
+  function step(now) {
+    if (last === null) last = now;
+    var dtMs = now - last; last = now;
+    revealT += (dtMs / REAL_MS_TOTAL) * SIM_MAX;
+    if (revealT >= SIM_MAX) { revealT = SIM_MAX; playing = false; }
+    caption(); draw();
+    if (playing) raf = requestAnimationFrame(step);
+  }
+
+  document.getElementById("modeDefault").addEventListener("click", function () { setMode("default"); });
+  document.getElementById("modeTuned").addEventListener("click", function () { setMode("tuned"); });
+  document.getElementById("play").addEventListener("click", play);
+  document.getElementById("reset").addEventListener("click", reset);
+  window.addEventListener("resize", fit);
+
+  setMode("default");
+  fit();
+})();
+</script>
+</body>
+</html>
