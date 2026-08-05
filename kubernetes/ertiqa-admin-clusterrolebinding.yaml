@@ -1,0 +1,165 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ertiqa-admins-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cs:admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "216241085865664651"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213689485829753534"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "216528985740454765"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "211339085740436885"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "218994285738474543"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213942185736089754"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "219886485667971874"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "211646985667950670"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "217662385665848826"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "210160485664807727"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215347685664620898"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215260685664449885"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215134285664303220"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "210506485664252625"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "219765385664193846"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213414585664025688"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213231585663846903"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "214250085663834096"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215548385663828882"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "218547885663799225"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "217866885663788894"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213036385663784909"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "212001285663777831"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "214889585663775823"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "219115285663750300"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "218713285663715269"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215619085663714283"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215586685663711231"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "218397985663678373"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "216461585663670094"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "210200985663651948"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "214006585663650354"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "218067285663640638"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "219103585663615206"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "212015085663606504"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "212721185663583768"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "210439285663563243"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "217996085663479384"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "211929585663414162"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "218244585663408056"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "210775485663382863"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "218460185663355460"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "219382585663348892"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213367885663242297"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "217610685662531642"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "219508785662503177"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215358885662235380"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213172785662122761"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "214060385662091983"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "213178485662066976"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "219209885661990738"
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: "215497385661279514"

@@ -1,0 +1,13 @@
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello
+  namespace: ______ # <-- same namespace as above
+spec:
+  type: ______ # <-- which type gives it a public address?
+  selector:
+    app: ______ # <-- must match the Pod label above
+  ports:
+    - port: 80
+      targetPort: 80

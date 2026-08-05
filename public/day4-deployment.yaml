@@ -1,0 +1,21 @@
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello
+  namespace: ______ # <-- your namespace, created in Milestone 8 step 1
+spec:
+  replicas: ____ # <-- run how many copies?
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
+        app: hello # <-- this label is what the Service will look for
+    spec:
+      containers:
+        - name: hello
+          image: nginxdemos/hello
+          ports:
+            - containerPort: 80

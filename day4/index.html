@@ -3,16 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Majal — Cloud Computing Day 4: Day 4 title</title>
+  <title>Majal — Cloud Computing Day 4: Kubernetes</title>
   <link rel="stylesheet" href="../shared/dist/reset.css">
   <link rel="stylesheet" href="../shared/dist/reveal.css">
   <link rel="stylesheet" href="../shared/css/course.css?v=2">
   <style>
-    /* ---- day-specific slide layouts live here, NOT in course.css --------
-       Build them out of the brand kernel's .card / .callout / var(--petrol)
-       so a new grid still reads as the same deck.  Common ones: */
+    /* ---- day 4 layouts — built from the brand kernel, never added to course.css ---- */
 
-    /* card grid — the workhorse concept slide */
     .k2 { display: grid; gap: 14px; margin-top: .3em; }
     .k2.c2 { grid-template-columns: 1fr 1fr; }
     .k2.c3 { grid-template-columns: repeat(3,1fr); }
@@ -25,7 +22,6 @@
       border-top: 1px dashed var(--line); padding-top: .45em; }
     .k2 .card .ex b { color: var(--petrol); font-weight: 700; }
 
-    /* pipeline / stage strip — a process with N stages, side by side */
     .pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: .55em;
       border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
     .pipe .stg { padding: .75em .85em; border-right: 1px solid var(--line); background: var(--panel); }
@@ -38,47 +34,408 @@
       display: flex; flex-wrap: wrap; gap: .28em; }
     .pipe .stg .tools span { font-family: var(--mono); font-size: .5em; font-weight: 700; letter-spacing: .04em;
       background: rgba(0,86,125,.09); color: var(--petrol); border-radius: 999px; padding: .28em .65em; }
+
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-top: .4em; }
+    .two.wide-l { grid-template-columns: 1.25fr .75fr; }
+    .two.wide-r { grid-template-columns: .8fr 1.2fr; }
+
+    .card.alt { border-top-color: var(--muted); }
+    .card ul { margin: .2em 0 0; padding-left: 1.1em; }
+    .card li { font-size: .64em; color: var(--muted); line-height: 1.55; margin-bottom: .2em; }
+    .card li b { color: var(--petrol); }
+
+    .rule p { margin: 0; }
+    .rule b { color: var(--petrol); }
+    .steps .rule { margin: .45em 0; font-size: .74em; }
+    .steps.tight .rule { margin: .28em 0; font-size: .62em; }
+    .steps.tight .rule p { line-height: 1.35; }
+    .fill { color: var(--bad); font-weight: 700; }
+    .cmt { color: #7f9aa3; }
+    .codeblock.sm { font-size: .46em; line-height: 1.5; }
+
+    /* a compact reference table */
+    .cmds { width: 100%; border-collapse: collapse; font-size: .6em; margin-top: .4em; }
+    .cmds td, .cmds th { padding: .4em .6em; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .cmds th { text-align: left; color: var(--muted); font-size: .92em; text-transform: uppercase;
+      letter-spacing: .04em; }
+    .cmds td:first-child { font-family: var(--mono); font-weight: 700; color: var(--petrol); white-space: nowrap; }
+    .cmds td:last-child { color: var(--muted); }
+    .cmds tr:last-child td { border-bottom: 0; }
+
+    /* inline download pill — same visual language as the chrome's .pdfdl,
+       but sits in slide flow instead of fixed position */
+    .dlrow { display: flex; gap: 10px; margin-top: .6em; }
+    a.dl { display: inline-flex; align-items: center; gap: .4em; font-family: var(--mono); font-size: .58em;
+      letter-spacing: .04em; color: var(--petrol); text-decoration: none; background: var(--panel);
+      border: 1px solid var(--line); border-radius: 999px; padding: .5em 1em; transition: border-color .12s; }
+    a.dl:hover { border-color: var(--petrol); }
+
+    /* Partner lockup — sccc guidelines 04.3 "led by a third party":
+       lead logotype 100%, rectangular sccc endorsement 60% of its height. */
+    .partners { display: flex; align-items: center; gap: 28px; margin-top: 1.5em;
+      border-top: 1px solid var(--line); padding-top: .7em; }
+    .partners .plabel { font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--muted); }
+    .partners img.azm  { height: 60px; width: auto; }
+    .partners img.sccc { height: 36px; width: auto; }
+    .partners.sm { margin-top: .7em; padding-top: .5em; gap: 20px; }
+    .partners.sm img.azm  { height: 40px; }
+    .partners.sm img.sccc { height: 24px; }
+
+    /* Back to the course landing page. The brandmark is pointer-events:none,
+       so the link has to opt back in. */
+    .brandmark .backlink { pointer-events: auto; font-family: var(--mono); font-size: 11px;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none;
+      border: 1px solid var(--line); border-radius: 3px; padding: .4em .75em; background: #fff;
+      transition: color .12s, border-color .12s; }
+    .brandmark .backlink:hover { color: var(--petrol); border-color: var(--petrol); }
   </style>
 </head>
 <body>
 <div class="reveal">
   <div class="slides">
 
-    <!-- ================= TITLE ================= -->
-    <section>
-      <p class="kicker">Day 4 · Day 4 title</p>
-      <h1>A sentence that states<br>today's real question.</h1>
-      <p class="sub" style="margin-top:1.2em;max-width:27em">Two or three lines that name what changes for the
-      learner today and what they will be able to do by the end. Not an agenda — a promise.</p>
-      <aside class="notes">Presenter: how to open, what to land in the first two minutes, what NOT to let this
-      become.</aside>
-    </section>
+    <!-- ============================================================ SESSION 1 -->
 
-    <!-- ================= FOUNDATIONS ================= -->
-    <!-- A BLOCK of slides, not a token on-ramp. List what the rest of the day
-         silently assumes, then teach each load-bearing piece. -->
     <section>
-      <p class="kicker">Foundations · the substrate</p>
-      <h2>The model everything today rests on</h2>
-      <div class="k2 c3">
-        <div class="card"><h3>Piece one <span class="tag">term</span></h3>
-          <p>What it is, in the learner's language.</p>
-          <span class="ex">Concretely: <b>a worked example</b>.</span></div>
-        <div class="card"><h3>Piece two <span class="tag">term</span></h3><p>…</p></div>
-        <div class="card"><h3>Piece three <span class="tag">term</span></h3><p>…</p></div>
+      <p class="kicker">Day 4 · Session 1 — Kubernetes: the problem and the mental model</p>
+      <h1>One crashed container took your site down.<br>Kubernetes never lets that happen again.</h1>
+      <p class="sub" style="margin-top:1.05em;max-width:31em">Your badge runs today as <b>one container on one
+      server</b>. If it crashes, you're down until you notice and fix it by hand. Today you meet
+      <b>Kubernetes</b> — the system that watches your containers for you and keeps them running. This session is
+      the mental model: the problem it solves and the four objects you need to read any cluster on sight. No
+      console work yet — next session you deploy onto a real one.</p>
+      <div class="partners">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
       </div>
-      <div class="callout" style="margin-top:.75em">The one sentence you want them to carry forward.</div>
-      <aside class="notes">Presenter notes.</aside>
+      <aside class="notes">Presenter: open with the failure mode they already half-know — ask "what happens right
+      now if your badge's container crashes at 2am?" Land the promise: by the end of the day they will have
+      scaled and self-healed a real deployment on a real cluster, and this session is the map before the
+      territory.</aside>
     </section>
 
-    <!-- ================= INTERACTIVE ================= -->
     <section>
-      <p class="kicker">Section · one-line context</p>
-      <h2>A single-line title that names the mechanism</h2>
+      <p class="kicker">The day · four ideas</p>
+      <h2>From "why bother" to reading any cluster on sight</h2>
+      <div class="pipe">
+        <div class="stg"><div class="num">Idea 1</div><h3>The problem</h3>
+          <div class="q">One container, one server: a crash means downtime, and popularity means more work for
+          you.</div>
+          <div class="tools"><span>crash</span><span>scale</span></div></div>
+        <div class="stg"><div class="num">Idea 2</div><h3>Desired state</h3>
+          <div class="q">You declare what you want; Kubernetes continuously makes reality match it.</div>
+          <div class="tools"><span>reconcile</span></div></div>
+        <div class="stg"><div class="num">Idea 3</div><h3>Four objects</h3>
+          <div class="q">Pod, Node, Deployment, Service — everything this week is built from exactly these.</div>
+          <div class="tools"><span>Pod</span><span>Deployment</span><span>Service</span></div></div>
+        <div class="stg"><div class="num">Idea 4</div><h3>Namespaces</h3>
+          <div class="q">One shared cluster, walled off per student — the same idea as your VPC on Day 3.</div>
+          <div class="tools"><span>namespace</span></div></div>
+      </div>
+      <div class="callout" style="margin-top:.9em">All four ideas build on each other in order — keep this strip
+      in mind as we go.</div>
+      <aside class="notes">Presenter: this strip is the spine of the session. Come back to it once before the
+      task slide so nobody loses the thread.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · what actually breaks on one container</p>
+      <h2>Why "one container on one server" doesn't survive contact with reality</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>A crash is a single point of failure</h3>
+          <p>Your container dies — a bug, an out-of-memory kill, anything. Nothing restarts it. Your badge is
+          down until <em>you</em> notice and SSH back in.</p></div>
+        <div class="card"><h3>Scaling means you, by hand</h3>
+          <p>App gets popular? You'd SSH in, run more containers yourself, and wire up a load balancer in front
+          of them — every time traffic changes.</p></div>
+        <div class="card alt"><h3>Kubernetes' one job</h3>
+          <p>Watch your containers <b>continuously</b> and keep reality matching what you asked for — restart
+          what dies, spread traffic across every healthy copy.</p></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">Everything from here is Kubernetes automating exactly
+      this — nobody SSHes in at 2am to restart a crashed container again.</div>
+      <aside class="notes">Presenter: keep this concrete — reuse their own badge as the running example. "If your
+      one server's container died right now, who would notice first — you, or a user?"</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · the idea under everything Kubernetes does</p>
+      <h2>You declare desired state. Kubernetes enforces it, forever.</h2>
+      <div class="two wide-l">
+        <div>
+          <p class="sub" style="font-size:.68em;max-width:none">You don't tell Kubernetes <em>how</em> to run
+          your app step by step. You describe the <b>desired state</b> — "I want 3 copies of this image, always"
+          — and hand it over. Kubernetes runs a tight loop, forever: check reality, compare it to what you asked
+          for, fix any difference.</p>
+          <div class="codeblock" style="margin-top:.6em;font-size:.62em">while true:
+  reality   = what's actually running
+  desired   = what you asked for
+  if reality != desired:
+      fix it   <span class="cmt"># start a Pod, or stop one</span></div>
+        </div>
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card alt"><h3>Like a thermostat</h3>
+            <p>You set the target temperature once. The thermostat keeps checking and correcting — you never
+            manually flip the heater on and off again.</p></div>
+          <div class="card"><h3>This is "self-healing"</h3>
+            <p>A crashed container isn't restarted by a script <em>you</em> wrote. It's this loop, noticing
+            reality fell short and fixing it — usually before anyone notices.</p></div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: land "declare, don't script" as the one-sentence mental model before the
+      four objects — everything after this is just naming the pieces this loop operates on.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · everything this week is built from exactly these</p>
+      <h2>The four objects: Pod, Node, Deployment, Service</h2>
+      <div class="k2 c4">
+        <div class="card"><h3>Pod <span class="tag">smallest unit</span></h3>
+          <p>One running copy of your container. Pods come and go — Kubernetes creates and destroys them
+          constantly.</p></div>
+        <div class="card"><h3>Node <span class="tag">worker VM</span></h3>
+          <p>A machine that runs Pods. A cluster has several — this is an ECS instance under the hood, same as
+          your Day 1 server.</p></div>
+        <div class="card alt"><h3>Deployment <span class="tag">desired state</span></h3>
+          <p>"Run N copies of this image, keep them healthy." Creates and replaces Pods for you. <b>This is
+          where scaling happens.</b></p></div>
+        <div class="card alt"><h3>Service <span class="tag">one address</span></h3>
+          <p>One stable network address in front of your Pods, spreading traffic across them. Pods change
+          constantly; the Service's address never does.</p></div>
+      </div>
+      <div class="callout" style="margin-top:.75em">🧠 <b>The mental model:</b> <em>Deployment</em> = how many
+      and which image · <em>Pod</em> = one running copy · <em>Node</em> = a machine to run copies on ·
+      <em>Service</em> = one front door to all of them.</div>
+      <aside class="notes">Presenter: say the callout sentence out loud, slowly — it's the single line they should
+      be able to repeat cold by the end of the day.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Kubernetes · desired state, self-healing, and load-balancing — live</p>
+      <h2>Kill a Pod. Scale it. Watch Kubernetes fix it before you can.</h2>
       <iframe class="wframe" style="height:566px"
-              src="widgets/my_widget.html?v=1"
-              title="What it is" scrolling="auto"></iframe>
-      <aside class="notes">Presenter: what to click, in what order, and what the room should conclude.</aside>
+              src="widgets/reconcile.html?v=1"
+              title="Kubernetes control room — reconciliation, self-healing, load-balancing" scrolling="no"></iframe>
+      <aside class="notes">Presenter: start by pointing at "desired 3 · current 3". Press <b>Kill a random
+      Pod</b> — watch current drop, then a new Pod appear as "Starting…" within a second with nobody touching
+      anything. Then push desired to 5 — two new Pods spawn, spread across both Nodes. Finally press <b>Send 6
+      requests</b> and call out that the dots land on different Pods — that's the Service load-balancing, and
+      it's exactly what they'll see as a changing hostname on the real page next session.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · one cluster, walled off per student</p>
+      <h2>Namespaces: the same trick your VPC pulled on Day 3</h2>
+      <div class="two">
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card"><h3>One shared cluster</h3>
+            <p>The whole class deploys onto a <b>single ACK cluster</b> your instructor already provisioned. You
+            are not creating a cluster today — it's already running.</p></div>
+          <div class="card alt"><h3>Namespace <span class="tag">your own area</span></h3>
+            <p>A namespace walls off a slice of the cluster — the same way your <b>VPC</b> walled off your own
+            network on Day 3. Every student creates their own, so nobody's Deployment collides with anyone
+            else's.</p></div>
+        </div>
+        <div class="codeblock">ACK cluster                  <span class="cmt">(shared by the whole class)</span>
+ ├── namespace: sara          <span class="cmt">(Sara's Pods live here)</span>
+ ├── namespace: turki         <span class="cmt">(Turki's Pods live here)</span>
+ └── namespace: <span class="fill">you</span>            <span class="cmt">← you create this next session</span></div>
+      </div>
+      <div class="callout" style="margin-top:.7em">Every step next session happens in the <b>Alibaba ACK console
+      UI</b> — no terminal, no <b class="mono">kubectl</b>.</div>
+      <aside class="notes">Presenter: point straight back at Day 3's VPC diagram — "same nesting idea, one level
+      up: cluster contains namespaces, the way a VPC contains vSwitches."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · Sara's mixed-up Kubernetes objects</p>
+      <h2>Name the ONE object responsible for each — cold, from the definitions</h2>
+      <div class="codeblock sm">1. One running copy of your container.                                     →  <span class="fill">______</span>
+2. Keeps N copies running, replacing any that die.                          →  <span class="fill">______</span>
+3. The worker machine that physically runs your Pods.                       →  <span class="fill">______</span>
+4. One stable address that spreads traffic across the healthy copies.       →  <span class="fill">______</span>
+5. What you create so your Deployment doesn't collide with a classmate's.   →  <span class="fill">______</span></div>
+      <div class="callout" style="margin-top:.6em">Hint: exactly one answer per line, all five terms from this
+      session — no term used twice.</div>
+      <aside class="notes">Presenter: work these live, cold-call the room. Answers: (1) Pod. (2) Deployment.
+      (3) Node. (4) Service. (5) Namespace.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Session 1 · done</p>
+      <h2>You can read a Kubernetes cluster and explain why it exists</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>The problem, named</h3><p>One container on one server can't heal itself or scale
+          itself — that's the whole reason Kubernetes exists.</p></div>
+        <div class="card"><h3>Four objects, cold</h3><p>Pod, Node, Deployment, Service — you can say what each one
+          does without looking it up.</p></div>
+        <div class="card"><h3>After the break</h3><p>You'll create your own namespace and deploy a real workload
+          onto the class's shared ACK cluster — then scale it and kill it on purpose.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.9em">🎮 <b>Kahoot:</b> Day 4 · Session 1 — the Kubernetes
+      problem, desired state, the four objects, and namespaces.</div>
+      <aside class="notes">Presenter: end on "you now know the map — next session is the territory." No console
+      today, so land the concepts hard; the payoff is immediate after lunch.</aside>
+    </section>
+
+    <!-- ============================================================ SESSION 2 -->
+
+    <section>
+      <p class="kicker">Day 4 · Session 2 — Deploy and scale on Kubernetes</p>
+      <h1>Time to actually run this on a real cluster.</h1>
+      <p class="sub" style="margin-top:1.05em;max-width:31em">One shared ACK cluster is already running — your
+      instructor provisioned it. You'll create your own namespace, describe a Deployment and a Service in YAML,
+      and watch real Pods come to life, scale up, and heal themselves — all from the Alibaba console.</p>
+      <aside class="notes">Presenter: promise the payoff explicitly — "everything from this morning, you're about
+      to do with your own hands on a real cluster."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · what you'll actually run</p>
+      <h2>nginxdemos/hello: a demo image that proves load-balancing on screen</h2>
+      <div class="two">
+        <div>
+          <p class="sub" style="font-size:.68em;max-width:none"><b class="mono">nginxdemos/hello</b> is a small
+          public demo web server. Its homepage prints the <b>hostname of the exact Pod</b> that answered your
+          request. That's not decoration — it's how you'll <em>see</em> multiple Pods and load-balancing working,
+          instead of just trusting they are.</p>
+          <div class="callout" style="margin-top:.6em">Your <b>badge stays exactly where it is</b>, on your Day 1
+          server. This is a separate, hands-on exercise in Kubernetes patterns you'll recognize on any real
+          job.</div>
+        </div>
+        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
+          <div class="card"><h3>Refresh, and watch it change</h3>
+            <p>Load the page, refresh a few times — the "Server address" / "Server name" line flips between your
+            different Pods. Same Service, different Pod each time.</p></div>
+          <div class="card alt"><h3>Why a public demo image</h3>
+            <p>No Dockerfile, no registry login, nothing to build. One image name, and the proof is on the
+            screen in one refresh.</p></div>
+        </div>
+      </div>
+      <aside class="notes">Presenter: tie this straight back to the widget from this morning — "the dots landing
+      on different Pods, that's this hostname line changing in your browser."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Foundations · giving your Service a real internet address</p>
+      <h2>Service types: keep it inside the cluster, or expose it to the world</h2>
+      <table class="cmds">
+        <tr><th>Type</th><th>Reachable from</th><th>When you'd use it</th></tr>
+        <tr><td>ClusterIP</td><td>Inside the cluster only</td><td>The default — an internal service other Pods
+          call.</td></tr>
+        <tr><td>LoadBalancer</td><td>The public internet</td><td>Alibaba automatically wires up a real load
+          balancer in front of your Pods — today's type.</td></tr>
+      </table>
+      <div class="callout" style="margin-top:.7em">💡 This is the same <b>SLB</b> concept from Day 3's "recognize,
+      don't configure" slide — except today <b class="mono">type: LoadBalancer</b> in your YAML is the entire
+      configuration. Kubernetes does the rest.</div>
+      <aside class="notes">Presenter: one minute, no more — the point is "you already met this idea, here's the
+      one line that turns it on."</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Task · complete the Deployment & Service</p>
+      <h2>Fill in the blanks so this runs <b class="mono">nginxdemos/hello</b>, 3 copies, on port 80</h2>
+      <div class="two" style="margin-top:.15em">
+        <div class="codeblock sm" style="font-size:.4em;line-height:1.35"><span class="cmt"># deployment.yaml</span>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello
+  namespace: <span class="fill">______</span> <span class="cmt"># yours, from Milestone 8</span>
+spec:
+  replicas: <span class="fill">____</span> <span class="cmt"># how many copies?</span>
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
+        app: hello <span class="cmt"># the Service looks for this</span>
+    spec:
+      containers:
+        - name: hello
+          image: nginxdemos/hello
+          ports:
+            - containerPort: 80</div>
+        <div class="codeblock sm" style="font-size:.4em;line-height:1.35"><span class="cmt"># service.yaml</span>
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello
+  namespace: <span class="fill">______</span> <span class="cmt"># same as above</span>
+spec:
+  type: <span class="fill">______</span> <span class="cmt"># public address?</span>
+  selector:
+    app: <span class="fill">______</span> <span class="cmt"># match the Pod label</span>
+  ports:
+    - port: 80
+      targetPort: 80</div>
+      </div>
+      <div class="dlrow" style="margin-top:.35em">
+        <a class="dl" href="../public/day4-deployment.yaml" download>&#8681; deployment.yaml</a>
+        <a class="dl" href="../public/day4-service.yaml" download>&#8681; service.yaml</a>
+      </div>
+      <div class="callout" style="margin-top:.2em;font-size:.66em">Hint: <b class="mono">replicas</b> is "how
+      many copies" — pick 3. The Service's <b class="mono">selector</b> must match the Pod's
+      <b class="mono">labels</b> (both say <b class="mono">app: hello</b>). <b class="mono">namespace</b> must
+      match in both files and the one you create in Milestone 8.</div>
+      <aside class="notes">Presenter: answers — namespace: their own name (both files, identical); replicas: 3;
+      type: LoadBalancer; selector app: hello.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">🏆 Milestone 8 · deploy, scale, and self-heal on ACK</p>
+      <h2>All from the Alibaba console — no terminal, no <b class="mono">kubectl</b></h2>
+      <div class="steps tight">
+        <div class="rule"><span class="n">1</span><p><b>Namespaces and Quotas</b> → <b>Create Namespace</b> →
+          name it uniquely → <b>OK</b>. Use this exact name as <b class="mono">namespace:</b> in both YAML
+          files above.</p></div>
+        <div class="rule"><span class="n">2</span><p><b>Deployments</b> → <b>Create from YAML</b> → paste your
+          completed <b class="mono">deployment.yaml</b>.</p></div>
+        <div class="rule"><span class="n">3</span><p><b>Network → Services</b> → <b>Create from YAML</b> → paste
+          your completed <b class="mono">service.yaml</b>.</p></div>
+        <div class="rule"><span class="n">4</span><p><b>Pods</b> — set the Namespace selector to yours, confirm
+          3 <b class="mono">hello</b> Pods are Running. In <b>Network → Services</b>, copy the Service's
+          external address.</p></div>
+        <div class="rule"><span class="n">5</span><p>Visit that address in a browser. Refresh 4–5 times —
+          watch the "Server address" line change as the Service load-balances.</p></div>
+        <div class="rule"><span class="n">6</span><p><b>Scale it.</b> In <b>Deployments</b> (namespace = yours),
+          find <b class="mono">hello</b> → <b>Scale</b> → <b>5</b> replicas. Watch two new Pods appear.</p></div>
+        <div class="rule"><span class="n">7</span><p><b>Self-heal.</b> In <b>Pods</b> (namespace = yours), click
+          <b>⋮</b> on one Pod → <b>Delete</b> → confirm. Watch a fresh one appear within seconds.</p></div>
+      </div>
+      <div class="ackbox" style="padding:.7em 1em;margin-top:.7em"><input type="checkbox" aria-label="milestone 8 complete">
+        <div>Your own namespace exists, referenced by both YAML files · <b class="mono">hello</b> runs as
+        multiple Pods behind the Service's external address · refreshing shows different Pod hostnames · scaled
+        to 5 replicas · deleted a Pod and watched it get recreated.</div></div>
+      <aside class="notes">Presenter: this is the payoff slide — let it breathe. Walk the room checking that the
+      "Server address" actually changes on refresh before moving to scaling; that's the moment load-balancing
+      stops being a diagram and becomes something they watched happen.</aside>
+    </section>
+
+    <section>
+      <p class="kicker">Day 4 · done</p>
+      <h2>You can deploy, scale, and self-heal a real workload on Kubernetes</h2>
+      <div class="k2 c3">
+        <div class="card"><h3>This morning</h3><p>The problem Kubernetes solves, desired state, the four objects,
+          and namespaces.</p></div>
+        <div class="card"><h3>This afternoon</h3><p>Your own namespace, a Deployment and Service on a real shared
+          ACK cluster — scaled and self-healed by hand.</p></div>
+        <div class="card"><h3>Tomorrow</h3><p>Branches, pull requests, a build check on your pipeline, and the
+          capstone — documenting the whole week's deployment as your own.</p></div>
+      </div>
+      <div class="callout hot" style="margin-top:.9em">🎮 <b>Kahoot:</b> Day 4 · Session 2 — Deployments,
+      Services, Service types, scaling, and self-healing.</div>
+      <div class="partners sm">
+        <span class="plabel">In partnership with</span>
+        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
+        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
+      </div>
+      <aside class="notes">Presenter: end on "you just did, with your own hands, what most engineers only read
+      about" — reframe the day as a real skill, not a demo.</aside>
     </section>
 
   </div>
@@ -86,6 +443,6 @@
 
 <script src="../shared/dist/reveal.js"></script>
 <script src="../shared/plugin/notes/notes.js"></script>
-<script src="js/state.js?v=1"></script>
+<script src="js/state.js?v=2"></script>
 </body>
 </html>
