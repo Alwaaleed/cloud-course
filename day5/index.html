@@ -1,472 +1,1145 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Majal — Cloud Computing Day 5: Kubectl &amp; Autoscaling</title>
-  <link rel="stylesheet" href="../shared/dist/reset.css">
-  <link rel="stylesheet" href="../shared/dist/reveal.css">
-  <link rel="stylesheet" href="../shared/css/course.css?v=2">
-  <style>
-    /* ---- day 5 layouts — built from the brand kernel, never added to course.css ---- */
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Majal — Cloud Computing Day 5: Kubectl &amp; Autoscaling</title>
+    <link rel="stylesheet" href="../shared/dist/reset.css" />
+    <link rel="stylesheet" href="../shared/dist/reveal.css" />
+    <link rel="stylesheet" href="../shared/css/course.css?v=2" />
+    <style>
+      /* ---- day 5 layouts — built from the brand kernel, never added to course.css ---- */
 
-    .k2 { display: grid; gap: 14px; margin-top: .3em; }
-    .k2.c2 { grid-template-columns: 1fr 1fr; }
-    .k2.c3 { grid-template-columns: repeat(3,1fr); }
-    .k2.c4 { grid-template-columns: repeat(4,1fr); }
-    .k2 .card h3 { margin: 0 0 .3em; font-size: .82em; color: var(--petrol); letter-spacing: -.01em; }
-    .k2 .card h3 .tag { font-family: var(--mono); font-size: .58em; font-weight: 700; color: var(--muted);
-      letter-spacing: .05em; text-transform: uppercase; margin-left: .4em; }
-    .k2 .card p { margin: 0; font-size: .64em; color: var(--muted); line-height: 1.42; }
-    .k2 .card .ex { display: block; margin-top: .55em; font-size: .6em; color: var(--slate);
-      border-top: 1px dashed var(--line); padding-top: .45em; }
-    .k2 .card .ex b { color: var(--petrol); font-weight: 700; }
+      .k2 {
+        display: grid;
+        gap: 14px;
+        margin-top: 0.3em;
+      }
+      .k2.c2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .k2.c3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .k2.c4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .k2 .card h3 {
+        margin: 0 0 0.3em;
+        font-size: 0.82em;
+        color: var(--petrol);
+        letter-spacing: -0.01em;
+      }
+      .k2 .card h3 .tag {
+        font-family: var(--mono);
+        font-size: 0.58em;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-left: 0.4em;
+      }
+      .k2 .card p {
+        margin: 0;
+        font-size: 0.64em;
+        color: var(--muted);
+        line-height: 1.42;
+      }
+      .k2 .card .ex {
+        display: block;
+        margin-top: 0.55em;
+        font-size: 0.6em;
+        color: var(--slate);
+        border-top: 1px dashed var(--line);
+        padding-top: 0.45em;
+      }
+      .k2 .card .ex b {
+        color: var(--petrol);
+        font-weight: 700;
+      }
 
-    .pipe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: .55em;
-      border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-    .pipe .stg { padding: .75em .85em; border-right: 1px solid var(--line); background: var(--panel); }
-    .pipe .stg:last-child { border-right: 0; }
-    .pipe .stg .num { font-family: var(--mono); font-size: .5em; font-weight: 800; letter-spacing: .16em;
-      color: var(--turq); text-transform: uppercase; }
-    .pipe .stg h3 { margin: .12em 0 .3em; font-size: .74em; color: var(--petrol); }
-    .pipe .stg .q { font-size: .56em; color: var(--muted); line-height: 1.38; min-height: 3.4em; }
-    .pipe .stg .tools { margin-top: .5em; border-top: 1px dashed var(--line); padding-top: .45em;
-      display: flex; flex-wrap: wrap; gap: .28em; }
-    .pipe .stg .tools span { font-family: var(--mono); font-size: .5em; font-weight: 700; letter-spacing: .04em;
-      background: rgba(0,86,125,.09); color: var(--petrol); border-radius: 999px; padding: .28em .65em; }
+      .pipe {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        margin-top: 0.55em;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .pipe .stg {
+        padding: 0.75em 0.85em;
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .pipe .stg:last-child {
+        border-right: 0;
+      }
+      .pipe .stg .num {
+        font-family: var(--mono);
+        font-size: 0.5em;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        color: var(--turq);
+        text-transform: uppercase;
+      }
+      .pipe .stg h3 {
+        margin: 0.12em 0 0.3em;
+        font-size: 0.74em;
+        color: var(--petrol);
+      }
+      .pipe .stg .q {
+        font-size: 0.56em;
+        color: var(--muted);
+        line-height: 1.38;
+        min-height: 3.4em;
+      }
+      .pipe .stg .tools {
+        margin-top: 0.5em;
+        border-top: 1px dashed var(--line);
+        padding-top: 0.45em;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.28em;
+      }
+      .pipe .stg .tools span {
+        font-family: var(--mono);
+        font-size: 0.5em;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        background: rgba(0, 86, 125, 0.09);
+        color: var(--petrol);
+        border-radius: 999px;
+        padding: 0.28em 0.65em;
+      }
 
-    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-top: .4em; }
-    .two.wide-l { grid-template-columns: 1.25fr .75fr; }
-    .two.wide-r { grid-template-columns: .8fr 1.2fr; }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        align-items: start;
+        margin-top: 0.4em;
+      }
+      .two.wide-l {
+        grid-template-columns: 1.25fr 0.75fr;
+      }
+      .two.wide-r {
+        grid-template-columns: 0.8fr 1.2fr;
+      }
 
-    .card.alt { border-top-color: var(--muted); }
-    .card ul { margin: .2em 0 0; padding-left: 1.1em; }
-    .card li { font-size: .64em; color: var(--muted); line-height: 1.55; margin-bottom: .2em; }
-    .card li b { color: var(--petrol); }
+      .card.alt {
+        border-top-color: var(--muted);
+      }
+      .card ul {
+        margin: 0.2em 0 0;
+        padding-left: 1.1em;
+      }
+      .card li {
+        font-size: 0.64em;
+        color: var(--muted);
+        line-height: 1.55;
+        margin-bottom: 0.2em;
+      }
+      .card li b {
+        color: var(--petrol);
+      }
 
-    .rule p { margin: 0; }
-    .rule b { color: var(--petrol); }
-    .steps .rule { margin: .45em 0; font-size: .74em; }
-    .steps.tight .rule { margin: .28em 0; font-size: .62em; }
-    .steps.tight .rule p { line-height: 1.35; }
-    .fill { color: var(--bad); font-weight: 700; }
-    .cmt { color: #7f9aa3; }
-    .codeblock.sm { font-size: .46em; line-height: 1.5; }
+      .rule p {
+        margin: 0;
+      }
+      .rule b {
+        color: var(--petrol);
+      }
+      .steps .rule {
+        margin: 0.45em 0;
+        font-size: 0.74em;
+      }
+      .steps.tight .rule {
+        margin: 0.28em 0;
+        font-size: 0.62em;
+      }
+      .steps.tight .rule p {
+        line-height: 1.35;
+      }
+      .fill {
+        color: var(--bad);
+        font-weight: 700;
+      }
+      .cmt {
+        color: #7f9aa3;
+      }
+      .codeblock.sm {
+        font-size: 0.46em;
+        line-height: 1.5;
+      }
 
-    /* a compact reference table */
-    .cmds { width: 100%; border-collapse: collapse; font-size: .6em; margin-top: .4em; }
-    .cmds td, .cmds th { padding: .4em .6em; border-bottom: 1px solid var(--line); vertical-align: top; }
-    .cmds th { text-align: left; color: var(--muted); font-size: .92em; text-transform: uppercase;
-      letter-spacing: .04em; }
-    .cmds td:first-child { font-family: var(--mono); font-weight: 700; color: var(--petrol); white-space: nowrap; }
-    .cmds td:last-child { color: var(--muted); }
-    .cmds tr:last-child td { border-bottom: 0; }
+      /* a compact reference table */
+      .cmds {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.6em;
+        margin-top: 0.4em;
+      }
+      .cmds td,
+      .cmds th {
+        padding: 0.4em 0.6em;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      .cmds th {
+        text-align: left;
+        color: var(--muted);
+        font-size: 0.92em;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .cmds td:first-child {
+        font-family: var(--mono);
+        font-weight: 700;
+        color: var(--petrol);
+        white-space: nowrap;
+      }
+      .cmds td:last-child {
+        color: var(--muted);
+      }
+      .cmds tr:last-child td {
+        border-bottom: 0;
+      }
 
-    /* inline download pill — same visual language as the chrome's .pdfdl,
+      /* inline download pill — same visual language as the chrome's .pdfdl,
        but sits in slide flow instead of fixed position */
-    .dlrow { display: flex; gap: 10px; margin-top: .6em; flex-wrap: wrap; }
-    a.dl { display: inline-flex; align-items: center; gap: .4em; font-family: var(--mono); font-size: .58em;
-      letter-spacing: .04em; color: var(--petrol); text-decoration: none; background: var(--panel);
-      border: 1px solid var(--line); border-radius: 999px; padding: .5em 1em; transition: border-color .12s; }
-    a.dl:hover { border-color: var(--petrol); }
+      .dlrow {
+        display: flex;
+        gap: 10px;
+        margin-top: 0.6em;
+        flex-wrap: wrap;
+      }
+      a.dl {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
+        font-family: var(--mono);
+        font-size: 0.58em;
+        letter-spacing: 0.04em;
+        color: var(--petrol);
+        text-decoration: none;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.5em 1em;
+        transition: border-color 0.12s;
+      }
+      a.dl:hover {
+        border-color: var(--petrol);
+      }
 
-    /* Partner lockup — sccc guidelines 04.3 "led by a third party":
+      /* Partner lockup — sccc guidelines 04.3 "led by a third party":
        lead logotype 100%, rectangular sccc endorsement 60% of its height. */
-    .partners { display: flex; align-items: center; gap: 28px; margin-top: 1.5em;
-      border-top: 1px solid var(--line); padding-top: .7em; }
-    .partners .plabel { font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
-      text-transform: uppercase; color: var(--muted); }
-    .partners img.azm  { height: 60px; width: auto; }
-    .partners img.sccc { height: 36px; width: auto; }
-    .partners.sm { margin-top: .7em; padding-top: .5em; gap: 20px; }
-    .partners.sm img.azm  { height: 40px; }
-    .partners.sm img.sccc { height: 24px; }
+      .partners {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        margin-top: 1.5em;
+        border-top: 1px solid var(--line);
+        padding-top: 0.7em;
+      }
+      .partners .plabel {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .partners img.azm {
+        height: 60px;
+        width: auto;
+      }
+      .partners img.sccc {
+        height: 36px;
+        width: auto;
+      }
+      .partners.sm {
+        margin-top: 0.7em;
+        padding-top: 0.5em;
+        gap: 20px;
+      }
+      .partners.sm img.azm {
+        height: 40px;
+      }
+      .partners.sm img.sccc {
+        height: 24px;
+      }
 
-    /* Back to the course landing page. The brandmark is pointer-events:none,
+      /* Back to the course landing page. The brandmark is pointer-events:none,
        so the link has to opt back in. */
-    .brandmark .backlink { pointer-events: auto; font-family: var(--mono); font-size: 11px;
-      letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none;
-      border: 1px solid var(--line); border-radius: 3px; padding: .4em .75em; background: #fff;
-      transition: color .12s, border-color .12s; }
-    .brandmark .backlink:hover { color: var(--petrol); border-color: var(--petrol); }
+      .brandmark .backlink {
+        pointer-events: auto;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        text-decoration: none;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0.4em 0.75em;
+        background: #fff;
+        transition:
+          color 0.12s,
+          border-color 0.12s;
+      }
+      .brandmark .backlink:hover {
+        color: var(--petrol);
+        border-color: var(--petrol);
+      }
 
-    /* ascii architecture diagram — front-door / backend split */
-    .arch { font-family: var(--mono); font-size: .5em; line-height: 1.4; background: var(--code-bg);
-      border: 1px solid var(--code-line); border-left: 4px solid var(--turq); border-radius: 4px;
-      padding: .9em 1.1em; color: var(--code-ink); white-space: pre; overflow-x: auto; }
-    .arch .hi { color: #fff; font-weight: 700; }
-    .arch .pin { color: var(--yellow); font-weight: 700; }
-  </style>
-</head>
-<body>
-<div class="reveal">
-  <div class="slides">
+      /* ascii architecture diagram — front-door / backend split */
+      .arch {
+        font-family: var(--mono);
+        font-size: 0.5em;
+        line-height: 1.4;
+        background: var(--code-bg);
+        border: 1px solid var(--code-line);
+        border-left: 4px solid var(--turq);
+        border-radius: 4px;
+        padding: 0.9em 1.1em;
+        color: var(--code-ink);
+        white-space: pre;
+        overflow-x: auto;
+      }
+      .arch .hi {
+        color: #fff;
+        font-weight: 700;
+      }
+      .arch .pin {
+        color: var(--yellow);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- ============================================================ SESSION 1 -->
 
-    <!-- ============================================================ SESSION 1 -->
+        <section>
+          <p class="kicker">
+            Day 5 · Session 1 — kubectl: driving your cluster from the terminal
+          </p>
+          <h1>Yesterday you clicked it into being.<br />Today you type it.</h1>
+          <p class="sub" style="margin-top: 1.05em; max-width: 31em">
+            Yesterday you deployed to the shared ACK cluster by clicking through
+            the Alibaba console. Today you drive it from your own terminal with
+            <b>kubectl</b> — the same commands real teams use every day. And
+            this time, your badge gets a <b>real subdomain</b> of its own, with
+            a <b>real TLS certificate</b>, instead of a shared cluster address.
+          </p>
+          <div class="partners">
+            <span class="plabel">In partnership with</span>
+            <img class="azm" src="../Saudi-Azm.png" alt="Saudi AZM" />
+            <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc" />
+          </div>
+          <aside class="notes">
+            Presenter: open by asking who still remembers every console click
+            from yesterday cold — today reframes those same objects as commands.
+            Land the payoff early: by the end of this session their badge is
+            live at their own name, not a shared address.
+          </aside>
+        </section>
 
-    <section>
-      <p class="kicker">Day 5 · Session 1 — kubectl: driving your cluster from the terminal</p>
-      <h1>Yesterday you clicked it into being.<br>Today you type it.</h1>
-      <p class="sub" style="margin-top:1.05em;max-width:31em">Yesterday you deployed to the shared ACK cluster by
-      clicking through the Alibaba console. Today you drive it from your own terminal with <b>kubectl</b> — the
-      same commands real teams use every day. And this time, your badge gets a <b>real subdomain</b> of its own,
-      with a <b>real TLS certificate</b>, instead of a shared cluster address.</p>
-      <div class="partners">
-        <span class="plabel">In partnership with</span>
-        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
-        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
+        <section>
+          <p class="kicker">The session · four ideas</p>
+          <h2>From clicking to typing, then a real name of your own</h2>
+          <div class="pipe">
+            <div class="stg">
+              <div class="num">Idea 1</div>
+              <h3>kubectl</h3>
+              <div class="q">
+                The terminal tool that talks to the cluster — everything you
+                clicked, it can type.
+              </div>
+              <div class="tools">
+                <span>kubeconfig</span><span>context</span>
+              </div>
+            </div>
+            <div class="stg">
+              <div class="num">Idea 2</div>
+              <h3>Bare Pods</h3>
+              <div class="q">
+                <b class="mono">kubectl run</b> — one Pod, no Deployment, no
+                self-healing.
+              </div>
+              <div class="tools"><span>run</span><span>delete</span></div>
+            </div>
+            <div class="stg">
+              <div class="num">Idea 3</div>
+              <h3>Typed objects</h3>
+              <div class="q">
+                Deployment and Service, same as yesterday — now from
+                <b class="mono">create</b> / <b class="mono">expose</b>.
+              </div>
+              <div class="tools">
+                <span>Deployment</span><span>Service</span>
+              </div>
+            </div>
+            <div class="stg">
+              <div class="num">Idea 4</div>
+              <h3>Annotations</h3>
+              <div class="q">
+                Metadata other tools read — this is how your badge gets a real
+                domain.
+              </div>
+              <div class="tools"><span>external-dns</span></div>
+            </div>
+          </div>
+          <div class="callout" style="margin-top: 0.9em">
+            All four ideas build on each other in order — keep this strip in
+            mind as we go.
+          </div>
+          <aside class="notes">
+            Presenter: this strip is the spine of the session. Come back to it
+            once before the milestone so nobody loses the thread.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">
+            Foundations · talking to a cluster from the terminal
+          </p>
+          <h2>kubectl: everything you clicked yesterday, now typed</h2>
+          <div class="two wide-l">
+            <div>
+              <p class="sub" style="font-size: 0.68em; max-width: none">
+                <b class="mono">kubectl</b> is the command-line tool that talks
+                to a Kubernetes cluster. It knows which cluster and namespace to
+                talk to from a <b>kubeconfig</b> file — your instructor hands
+                you yours, the same way you got an SSH key on Day 1.
+              </p>
+              <div
+                class="codeblock"
+                style="margin-top: 0.6em; font-size: 0.62em"
+              >
+                kubectl config get-contexts
+                <span class="cmt"
+                  ># confirms your kubeconfig loaded correctly</span
+                >
+                kubectl get pods -n &lt;your-namespace&gt;
+                <span class="cmt"># same Pods from yesterday, new window</span>
+              </div>
+            </div>
+            <div class="k2" style="grid-template-columns: 1fr; margin-top: 0">
+              <div class="card alt">
+                <h3>Same namespace as Day 4</h3>
+                <p>
+                  Every command below is scoped with
+                  <b class="mono">-n &lt;your-namespace&gt;</b> — the same one
+                  you created yesterday. You're still walled off from everyone
+                  else on the shared cluster.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Nothing to install on the cluster</h3>
+                <p>
+                  kubectl is a client you run locally. The cluster itself is
+                  already there — you're just pointing a new tool at it.
+                </p>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Presenter: get everyone's kubeconfig loaded and `kubectl get pods`
+            working before moving on — this is the one setup step the whole day
+            depends on.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Foundations · the bluntest tool in kubectl</p>
+          <h2>Pods the hard way: <b class="mono">kubectl run</b></h2>
+          <div class="codeblock" style="font-size: 0.56em">
+            kubectl run scratch --image=nginx --port=80 -n
+            &lt;your-namespace&gt; kubectl get pods -n &lt;your-namespace&gt;
+            kubectl describe pod scratch -n &lt;your-namespace&gt;
+            <span class="cmt"># events, status, why it's (not) running</span>
+            kubectl logs scratch -n &lt;your-namespace&gt;
+            <span class="cmt"># what the container printed</span> kubectl delete
+            pod scratch -n &lt;your-namespace&gt;
+            <span class="cmt"># gone - and nothing replaces it</span>
+          </div>
+          <div class="k2 c2" style="margin-top: 0.6em">
+            <div class="card alt">
+              <h3>No Deployment, no self-healing</h3>
+              <p>
+                That last line is the point: delete a bare Pod and it's just
+                gone. Nothing watches it, nothing replaces it.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Exactly why Day 4 had Deployments</h3>
+              <p>
+                This is the gap a Deployment fills — you're about to create one
+                yourself, typed instead of clicked.
+              </p>
+            </div>
+          </div>
+          <aside class="notes">
+            Presenter: run this live, delete the Pod, and let the silence land —
+            nothing comes back. That absence is the whole teaching point before
+            Deployments show up again.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">
+            Foundations · same two objects, typed instead of clicked
+          </p>
+          <h2>Deployments &amp; Services, from the CLI</h2>
+          <div class="codeblock" style="font-size: 0.62em">
+            kubectl create deployment badge
+            --image=&lt;your-dockerhub-username&gt;/cloud-explorer:latest -n
+            &lt;your-namespace&gt; kubectl expose deployment badge --port=80
+            --target-port=80 -n &lt;your-namespace&gt;
+          </div>
+          <div class="callout" style="margin-top: 0.6em">
+            Notice <b class="mono">kubectl expose</b> here makes a plain
+            internal address (<b class="mono">ClusterIP</b>), not a public one —
+            deliberate. Today's badge Deployment sits
+            <b>behind a front door</b> instead of facing the internet directly.
+            Next slide explains why.
+          </div>
+          <table class="cmds" style="margin-top: 0.6em">
+            <tr>
+              <th>Verb</th>
+              <th>Does</th>
+            </tr>
+            <tr>
+              <td>kubectl run</td>
+              <td>one bare Pod, no self-healing</td>
+            </tr>
+            <tr>
+              <td>kubectl create deployment</td>
+              <td>a Deployment — Pods that get replaced if they die</td>
+            </tr>
+            <tr>
+              <td>kubectl expose</td>
+              <td>
+                a Service — one stable address in front of the Deployment's Pods
+              </td>
+            </tr>
+            <tr>
+              <td>get / describe / logs</td>
+              <td>look, look closer, read what it printed</td>
+            </tr>
+            <tr>
+              <td>kubectl delete</td>
+              <td>remove it</td>
+            </tr>
+          </table>
+          <aside class="notes">
+            Presenter: this is deliberately the same two objects as Day 4 — the
+            news here is the verbs, not the concepts. Don't re-teach
+            Deployment/Service from scratch.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">
+            Foundations · why the badge doesn't just get its own LoadBalancer
+          </p>
+          <h2>One Service holds the domain. One Deployment scales freely.</h2>
+          <div class="arch">
+            Browser/hey &#8594; https://&lt;name&gt;.alialjaffer.com &#9474;
+            <span class="cmt"
+              >(external-dns watches this Service's annotation,</span
+            >
+            &#9474;
+            <span class="cmt"
+              >writes the DNS record — Cloudflare set DNS-only</span
+            >
+            &#9660;
+            <span class="cmt">so hey hits the real origin directly)</span>
+            <span class="hi">Service: caddy-front-door</span> (type:
+            LoadBalancer) &#9660;
+            <span class="pin">Deployment: caddy-front-door</span> (replicas: 1,
+            PINNED — never autoscaled) &#183; your instructor's own Caddy image
+            &#183; gets the ONE cert for this hostname &#9474;
+            <span class="cmt">reverse_proxy, plain HTTP, internal only</span>
+            &#9660;
+            <span class="hi">Service: badge</span> (type: ClusterIP, no external
+            IP) &#9660; <span class="pin">Deployment: badge</span> &#8592; THIS
+            is what the HPA scales next session &#183; your cloud-explorer image
+            &#183; never touches TLS/DNS &#183; scales freely
+          </div>
+          <div class="callout" style="margin-top: 0.5em; font-size: 0.7em">
+            A naive "run Caddy in every replica" design breaks under
+            autoscaling: N replicas means N Let's Encrypt requests for the
+            <em>same</em> hostname. Splitting front door from backend fixes it.
+          </div>
+          <aside class="notes">
+            Presenter: this is the "why" slide — don't skip it even though it's
+            dense. The one-sentence version: only the front door touches
+            TLS/DNS, and only it stays pinned at one replica; the badge behind
+            it is free to scale to zero problems.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Foundations · metadata other tools read</p>
+          <h2>
+            Annotations vs labels — and the one that gives you a real domain
+          </h2>
+          <div class="codeblock" style="font-size: 0.62em">
+            metadata: annotations: external-dns.alpha.kubernetes.io/hostname:
+            &lt;your-name&gt;.alialjaffer.com
+          </div>
+          <div class="k2 c2" style="margin-top: 0.6em">
+            <div class="card">
+              <h3>Label <span class="tag">Kubernetes reads it</span></h3>
+              <p>
+                Metadata Kubernetes itself uses to match objects — how a
+                Service's <b class="mono">selector</b> finds the right Pods.
+              </p>
+            </div>
+            <div class="card alt">
+              <h3>Annotation <span class="tag">other tools read it</span></h3>
+              <p>
+                Metadata for everything <em>else</em>. Kubernetes core doesn't
+                act on it — a controller you installed does.
+              </p>
+            </div>
+          </div>
+          <div class="callout" style="margin-top: 0.6em">
+            <b>external-dns</b> is already installed on the shared cluster. It
+            watches every Service for this one annotation key, and writes the
+            matching DNS record automatically — no console clicking, no manual
+            DNS entry. 🔒 Records are DNS-only (no Cloudflare proxying), so the
+            real IP is always reachable directly.
+          </div>
+          <aside class="notes">
+            Presenter: the annotation/label distinction is a five-second
+            definition — don't linger. Spend the time on "this one annotation is
+            the entire reason your subdomain exists."
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">🏆 Milestone 9 · give your badge its own name</p>
+          <h2>A real subdomain, a real certificate, all from your terminal</h2>
+          <div class="steps tight">
+            <div class="rule">
+              <span class="n">1</span>
+              <p>
+                <b>Recon</b> yesterday's objects:
+                <b class="mono"
+                  >kubectl get pods,deployments,services -n
+                  &lt;your-namespace&gt;</b
+                >.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">2</span>
+              <p>
+                <b>Feel the gap.</b> Run a throwaway Pod with
+                <b class="mono">kubectl run</b>, delete it, watch nothing
+                replace it.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">3</span>
+              <p>
+                <b>Clean slate.</b> Delete yesterday's
+                <b class="mono">hello</b> Deployment and Service — you won't
+                need them anymore.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">4</span>
+              <p>
+                <b>Rebuild badge as the backend.</b> Download it, fill in your
+                namespace and Docker Hub username, then
+                <b class="mono">apply</b> it and <b class="mono">expose</b> it.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">5</span>
+              <p>
+                <b>Stand up the front door.</b> Fill in your namespace and
+                subdomain in both the Deployment and the Service (scroll down),
+                then <b class="mono">apply</b> them.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">6</span>
+              <p>
+                <b>Wait a minute</b>, then visit
+                <b class="mono">https://&lt;your-name&gt;.alialjaffer.com</b> —
+                real padlock, real name, and
+                <b class="mono">served by pod: badge-xxxxx</b>.
+              </p>
+            </div>
+          </div>
+          <div class="dlrow">
+            <a class="dl" href="../public/day5-badge-deployment.yaml" download
+              >&#8681; badge-deployment.yaml</a
+            >
+            <a class="dl" href="../public/day5-front-door.yaml" download
+              >&#8681; front-door.yaml</a
+            >
+          </div>
+          <div class="ackbox" style="padding: 0.6em 1em; margin-top: 0.5em">
+            <input type="checkbox" aria-label="milestone 9 complete" />
+            <div>
+              Bare Pod ran and did <em>not</em> come back after deletion &#183;
+              badge live at your own real subdomain with a genuine TLS
+              certificate &#183; badge page shows the actual serving Pod's name.
+            </div>
+          </div>
+          <aside class="notes">
+            Presenter: this is the payoff slide — let it breathe. Walk the room
+            checking the real padlock and the "served by pod:" line actually
+            appear before moving on.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Session 1 · done</p>
+          <h2>
+            You drove a real cluster from your terminal and named it yourself
+          </h2>
+          <div class="k2 c3">
+            <div class="card">
+              <h3>Typed, not clicked</h3>
+              <p>
+                <b class="mono">kubectl run</b>,
+                <b class="mono">create deployment</b>,
+                <b class="mono">expose</b> — the same objects as Day 4, now from
+                the CLI.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Annotations, not labels</h3>
+              <p>
+                One <b class="mono">external-dns</b> annotation gave your badge
+                a real subdomain and a real TLS certificate.
+              </p>
+            </div>
+            <div class="card">
+              <h3>After the break</h3>
+              <p>
+                Your badge is pinned at one replica. Next you'll let the cluster
+                scale it by itself — then load-test the whole class at once.
+              </p>
+            </div>
+          </div>
+          <div class="callout hot" style="margin-top: 0.9em">
+            🎮 <b>Kahoot:</b> Day 5 · Session 1 — kubectl verbs, Pods vs
+            Deployments, and annotations vs labels.
+          </div>
+          <aside class="notes">
+            Presenter: end on "your badge now has a name nobody else's cluster
+            address does" — that's the emotional payoff before lunch.
+          </aside>
+        </section>
+
+        <!-- ============================================================ SESSION 2 -->
+
+        <section>
+          <p class="kicker">
+            Day 5 · Session 2 — autoscaling: survive the class-wide load test
+          </p>
+          <h1>
+            Your badge is live at its own name.<br />Now scale it — on purpose,
+            in front of everyone.
+          </h1>
+          <p class="sub" style="margin-top: 1.05em; max-width: 31em">
+            Scale it by hand first, then hand the job to an autoscaler, then
+            tune how fast it reacts in both directions. At the end, the whole
+            class hits every subdomain at once to see whose autoscaler holds up.
+          </p>
+          <aside class="notes">
+            Presenter: promise the finale explicitly — "at the end of this
+            session, we all run hey against our own subdomains at the same
+            moment, live."
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Foundations · you already did this by clicking</p>
+          <h2>Manual scaling: you're the thermostat</h2>
+          <div class="codeblock" style="font-size: 0.6em">
+            kubectl scale deployment badge --replicas=5 -n
+            &lt;your-namespace&gt; kubectl get pods -n &lt;your-namespace&gt;
+            --watch
+          </div>
+          <div class="k2 c2" style="margin-top: 0.6em">
+            <div class="card alt">
+              <h3>This works</h3>
+              <p>
+                But <em>you</em> have to notice the traffic and type the command
+                every time.
+              </p>
+            </div>
+            <div class="card">
+              <h3>That gap is what HPA fills</h3>
+              <p>
+                A HorizontalPodAutoscaler watches usage and adjusts
+                <b class="mono">replicas</b> for you.
+              </p>
+            </div>
+          </div>
+          <aside class="notes">
+            Presenter: same idea as Day 4's Scale button, just typed. Don't
+            over-teach — one command, then move straight to "who does this
+            instead of you."
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Foundations · let the cluster be the thermostat</p>
+          <h2>HPA: self-healing, aimed at load instead of crashes</h2>
+          <p class="sub" style="font-size: 0.68em; max-width: none">
+            A <b>HorizontalPodAutoscaler (HPA)</b> watches a Deployment's
+            resource usage and adjusts <b class="mono">replicas</b> for you.
+          </p>
+          <div class="codeblock" style="margin-top: 0.5em; font-size: 0.56em">
+            kubectl autoscale deployment badge --cpu-percent=50 --min=1 --max=10
+            -n &lt;your-namespace&gt; kubectl get hpa -n &lt;your-namespace&gt;
+            --watch
+          </div>
+          <div class="k2 c2" style="margin-top: 0.6em">
+            <div class="card alt">
+              <h3>One prerequisite</h3>
+              <p>
+                HPA measures usage as a
+                <b>percentage of what a Pod asked for</b>. Milestone 9's
+                Deployment already set this to 50m — confirm it:
+                <b class="mono"
+                  >kubectl set resources deployment badge --requests=cpu=50m</b
+                >.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Set artificially low, on purpose</h3>
+              <p>
+                Makes the autoscaler easy to trigger live in class. A production
+                service sizes this from real measured usage, not a demo-friendly
+                round number.
+              </p>
+            </div>
+          </div>
+          <aside class="notes">
+            Presenter: land the CPU-request prerequisite clearly — it's the
+            thing students most often forget, and the HPA silently reports
+            "unknown" targets without it.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">
+            HPA · scale-up is fast, scale-down is slow by default — feel the
+            asymmetry
+          </p>
+          <h2>Tune how fast the autoscaler reacts, in both directions</h2>
+          <iframe
+            class="wframe"
+            style="height: 510px"
+            src="widgets/hpa_tuning.html?v=1"
+            title="HPA scaling behavior — default cooldown vs a tuned behavior block"
+            scrolling="no"
+          ></iframe>
+          <aside class="notes">
+            Presenter: press Play with "Default" selected first — watch replicas
+            rocket up, then sit stuck near the peak for a long, visible stretch
+            after load drops. Switch to "Tuned" and press Play again — same load
+            curve, scale-down now tracks it down almost immediately. Call out
+            that the times shown are the real Kubernetes numbers (300s vs 15s),
+            just played back fast enough to watch.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Foundations · overriding the default with YAML</p>
+          <h2>
+            The <b class="mono">behavior</b> block: no cluster-admin access
+            needed
+          </h2>
+          <div class="codeblock" style="font-size: 0.58em">
+            behavior: scaleUp: stabilizationWindowSeconds: 0 policies: - type:
+            Percent value: 100 periodSeconds: 15 scaleDown:
+            stabilizationWindowSeconds: 15 policies: - type: Percent value: 50
+            periodSeconds: 15
+          </div>
+          <div class="callout" style="margin-top: 0.6em">
+            By default, HPA scales <b>up</b> almost instantly but scales
+            <b>down</b> slowly — a built-in 5-minute cooldown (<b class="mono"
+              >stabilizationWindowSeconds: 300</b
+            >) so it doesn't yo-yo on every small blip.
+            <b class="mono">kubectl autoscale</b> can't set this — it only takes
+            <b class="mono">--min</b>/<b class="mono">--max</b>/<b class="mono"
+              >--cpu-percent</b
+            >. To add <b class="mono">behavior</b>, you
+            <b class="mono">apply</b> a full HPA YAML over the one you already
+            created — same name, same object, updated spec.
+          </div>
+          <aside class="notes">
+            Presenter: tie this straight back to the widget — this is the exact
+            YAML behind the "Tuned" toggle.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">
+            Foundations · point traffic at yourself, on purpose
+          </p>
+          <h2><b class="mono">hey</b>: a load-testing tool, one command</h2>
+          <p class="sub" style="font-size: 0.68em; max-width: none">
+            In a Terminal (MobaXterm, Terminal) run the following:
+          </p>
+          <div class="codeblock" style="margin-top: 0.4em; font-size: 0.68em">
+            hey -z 60s -c 50 https://&lt;your-name&gt;.alialjaffer.com/
+          </div>
+          <div class="callout" style="margin-top: 0.6em">
+            <b class="mono">-z 60s</b> = run for 60 seconds.
+            <b class="mono">-c 50</b> = 50 requests in flight at once. Point it
+            at the real subdomain you stood up last session — the request has to
+            survive DNS, the front door, and the load-balanced backend, same as
+            any real visitor.
+          </div>
+          <aside class="notes">
+            Presenter: run a small `hey -z 10s -c 5` live here as a warm-up
+            before the class-wide test, so everyone confirms their own subdomain
+            answers before the real showdown.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">
+            🏆 Milestone 10 · the class-wide load-test showdown
+          </p>
+          <h2>Scale, tune, then hit it with the rest of the class at once</h2>
+          <div class="steps tight">
+            <div class="rule">
+              <span class="n">1</span>
+              <p>
+                <b>Reset baseline:</b> scale to 1 replica, set the CPU request
+                back to 50m.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">2</span>
+              <p>
+                <b>Turn on autoscaling:</b>
+                <b class="mono"
+                  >kubectl autoscale --cpu-percent=50 --min=1 --max=10</b
+                >.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">3</span>
+              <p>
+                <b>Tune it.</b> Fill in the scale-down blank,
+                <b class="mono">apply</b> your own
+                <b class="mono">hpa.yaml</b> with the full
+                <b class="mono">behavior</b> block.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">4</span>
+              <p>
+                <b>Confirm <b class="mono">hey</b> works</b> against your
+                subdomain with a short warm-up run.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">5</span>
+              <p>
+                <b>On your instructor's go:</b>
+                <b class="mono">hey -z 90s -c 100</b> against your subdomain,
+                with everyone else at the same moment.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">6</span>
+              <p>
+                <b>Watch it live</b> in a second terminal:
+                <b class="mono">kubectl get hpa --watch</b> and
+                <b class="mono">kubectl top pods</b>.
+              </p>
+            </div>
+            <div class="rule">
+              <span class="n">7</span>
+              <p>
+                <b>Refresh your badge</b> during and after — watch
+                <b class="mono">served by pod:</b> change as you land on
+                different replicas.
+              </p>
+            </div>
+          </div>
+          <div class="dlrow">
+            <a class="dl" href="../public/day5-hpa.yaml" download
+              >&#8681; hpa.yaml</a
+            >
+          </div>
+          <div class="ackbox" style="padding: 0.6em 1em; margin-top: 0.5em">
+            <input type="checkbox" aria-label="milestone 10 complete" />
+            <div>
+              HPA scaled up under load and back down within ~15-30s of load
+              ending &#183; watched
+              <b class="mono">kubectl get hpa --watch</b> /
+              <b class="mono">top pods</b> move live &#183; saw the served-by
+              pod name change on refresh.
+            </div>
+          </div>
+          <aside class="notes">
+            Presenter: this is the finale — coordinate the "go" moment
+            explicitly so every student's `hey` fires at roughly the same
+            second. Walk the room during the 90s window pointing at `kubectl get
+            hpa --watch` outputs on different screens.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Day 5 · done — and the week</p>
+          <h2>
+            You drove a real Kubernetes cluster from the terminal, end to end
+          </h2>
+          <div class="k2 c3">
+            <div class="card">
+              <h3>This morning</h3>
+              <p>
+                kubectl, typed Deployments &amp; Services, annotations — your
+                badge live at its own real subdomain with a real certificate.
+              </p>
+            </div>
+            <div class="card">
+              <h3>This afternoon</h3>
+              <p>
+                Manual scaling, HPA, a tuned <b class="mono">behavior</b> block,
+                and a class-wide load test you watched scale live.
+              </p>
+            </div>
+            <div class="card">
+              <h3>The whole week</h3>
+              <p>
+                Server &#8594; Docker &#8594; CI/CD &#8594; networking &#8594;
+                Kubernetes &#8594; autoscaling. You came in never having
+                launched a server.
+              </p>
+            </div>
+          </div>
+          <div class="callout hot" style="margin-top: 0.9em">
+            🎮 <b>Kahoot:</b> Day 5 · Session 2 — manual scaling, HPA, scaling
+            behavior, and a grand mix of the whole week. Bragging rights on the
+            line. 🏆
+          </div>
+          <div class="partners sm">
+            <span class="plabel">In partnership with</span>
+            <img class="azm" src="../Saudi-Azm.png" alt="Saudi AZM" />
+            <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc" />
+          </div>
+          <aside class="notes">
+            Presenter: close the whole week here, not just the day — "you drove
+            a Kubernetes cluster from the terminal, on infrastructure you built
+            and named yourself." Mention where to go next:
+            Ingress/ConfigMaps/Secrets, Terraform, GitOps, Alibaba ACA
+            certification, AZM's Platform Engineering track.
+          </aside>
+        </section>
+
+        <section>
+          <p class="kicker">Day 5 · closing</p>
+          <h2>What's next for future YOU in the cloud? ☁️</h2>
+          <div class="k2 c3">
+            <div class="card">
+              <h3>AZEM Program</h3>
+              <p>
+                Follow the program for upcoming cohorts, events, and
+                announcements.
+              </p>
+              <span class="ex"
+                ><a
+                  href="https://www.linkedin.com/company/azembyazm/"
+                  target="_blank"
+                  rel="noopener"
+                  >linkedin.com/company/azembyazm</a
+                ></span
+              >
+            </div>
+            <div class="card">
+              <h3>Saudi AZM</h3>
+              <p>The company behind this bootcamp.</p>
+              <span class="ex"
+                ><a href="https://azm.sa" target="_blank" rel="noopener"
+                  >azm.sa</a
+                ></span
+              >
+            </div>
+            <div class="card">
+              <h3>SCCC by stc</h3>
+              <p>Our partner on this program.</p>
+              <span class="ex"
+                ><a href="https://sccc.sa" target="_blank" rel="noopener"
+                  >sccc.sa</a
+                ></span
+              >
+            </div>
+            <div class="card">
+              <h3>Cloud-adjacent positions</h3>
+              <p>Roles that build directly on what you practiced this week.</p>
+              <span class="ex"
+                >Platform Engineer · Cloud Engineer · DevOps Engineer ·
+                Infrastructure Engineer</span
+              >
+            </div>
+            <div class="card">
+              <h3>Dive deeper into cloud services</h3>
+              <p>Alibaba Cloud has far more than what we covered.</p>
+              <span class="ex"
+                >Object Storage Service (OSS) for storage · Function Compute for
+                FaaS · Platform for AI (PAI) · and more.</span
+              >
+            </div>
+            <div class="card">
+              <h3>Keep the material</h3>
+              <p>The labs and this deck stay with you.</p>
+              <span class="ex">
+                <a
+                  href="https://github.com/Alwaaleed/cloud-course"
+                  target="_blank"
+                  rel="noopener"
+                  >Alwaaleed/cloud-course</a
+                ><br />
+                <a
+                  href="https://github.com/aliAljaffer/cloud-explorer"
+                  target="_blank"
+                  rel="noopener"
+                  >aliAljaffer/cloud-explorer</a
+                ><br />
+                <a
+                  href="https://github.com/aliAljaffer/cloud-exploration-journey"
+                  target="_blank"
+                  rel="noopener"
+                  >aliAljaffer/cloud-exploration-journey</a
+                ><br />
+                <a href="https://alialjaffer.com" target="_blank" rel="noopener"
+                  >alialjaffer.com</a
+                >
+              </span>
+            </div>
+          </div>
+          <aside class="notes">
+            Presenter: talk through this one live — no need to read the slide
+            verbatim.
+          </aside>
+        </section>
       </div>
-      <aside class="notes">Presenter: open by asking who still remembers every console click from yesterday cold —
-      today reframes those same objects as commands. Land the payoff early: by the end of this session their badge
-      is live at their own name, not a shared address.</aside>
-    </section>
+    </div>
 
-    <section>
-      <p class="kicker">The session · four ideas</p>
-      <h2>From clicking to typing, then a real name of your own</h2>
-      <div class="pipe">
-        <div class="stg"><div class="num">Idea 1</div><h3>kubectl</h3>
-          <div class="q">The terminal tool that talks to the cluster — everything you clicked, it can type.</div>
-          <div class="tools"><span>kubeconfig</span><span>context</span></div></div>
-        <div class="stg"><div class="num">Idea 2</div><h3>Bare Pods</h3>
-          <div class="q"><b class="mono">kubectl run</b> — one Pod, no Deployment, no self-healing.</div>
-          <div class="tools"><span>run</span><span>delete</span></div></div>
-        <div class="stg"><div class="num">Idea 3</div><h3>Typed objects</h3>
-          <div class="q">Deployment and Service, same as yesterday — now from <b class="mono">create</b> /
-          <b class="mono">expose</b>.</div>
-          <div class="tools"><span>Deployment</span><span>Service</span></div></div>
-        <div class="stg"><div class="num">Idea 4</div><h3>Annotations</h3>
-          <div class="q">Metadata other tools read — this is how your badge gets a real domain.</div>
-          <div class="tools"><span>external-dns</span></div></div>
-      </div>
-      <div class="callout" style="margin-top:.9em">All four ideas build on each other in order — keep this strip
-      in mind as we go.</div>
-      <aside class="notes">Presenter: this strip is the spine of the session. Come back to it once before the
-      milestone so nobody loses the thread.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · talking to a cluster from the terminal</p>
-      <h2>kubectl: everything you clicked yesterday, now typed</h2>
-      <div class="two wide-l">
-        <div>
-          <p class="sub" style="font-size:.68em;max-width:none"><b class="mono">kubectl</b> is the command-line
-          tool that talks to a Kubernetes cluster. It knows which cluster and namespace to talk to from a
-          <b>kubeconfig</b> file — your instructor hands you yours, the same way you got an SSH key on Day 1.</p>
-          <div class="codeblock" style="margin-top:.6em;font-size:.62em">kubectl config get-contexts          <span class="cmt"># confirms your kubeconfig loaded correctly</span>
-kubectl get pods -n &lt;your-namespace&gt; <span class="cmt"># same Pods from yesterday, new window</span></div>
-        </div>
-        <div class="k2" style="grid-template-columns:1fr;margin-top:0">
-          <div class="card alt"><h3>Same namespace as Day 4</h3>
-            <p>Every command below is scoped with <b class="mono">-n &lt;your-namespace&gt;</b> — the same one
-            you created yesterday. You're still walled off from everyone else on the shared cluster.</p></div>
-          <div class="card"><h3>Nothing to install on the cluster</h3>
-            <p>kubectl is a client you run locally. The cluster itself is already there — you're just pointing a
-            new tool at it.</p></div>
-        </div>
-      </div>
-      <aside class="notes">Presenter: get everyone's kubeconfig loaded and `kubectl get pods` working before
-      moving on — this is the one setup step the whole day depends on.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · the bluntest tool in kubectl</p>
-      <h2>Pods the hard way: <b class="mono">kubectl run</b></h2>
-      <div class="codeblock" style="font-size:.56em">kubectl run scratch --image=nginx --port=80 -n &lt;your-namespace&gt;
-kubectl get pods -n &lt;your-namespace&gt;
-kubectl describe pod scratch -n &lt;your-namespace&gt;   <span class="cmt"># events, status, why it's (not) running</span>
-kubectl logs scratch -n &lt;your-namespace&gt;           <span class="cmt"># what the container printed</span>
-kubectl delete pod scratch -n &lt;your-namespace&gt;      <span class="cmt"># gone - and nothing replaces it</span></div>
-      <div class="k2 c2" style="margin-top:.6em">
-        <div class="card alt"><h3>No Deployment, no self-healing</h3>
-          <p>That last line is the point: delete a bare Pod and it's just gone. Nothing watches it, nothing
-          replaces it.</p></div>
-        <div class="card"><h3>Exactly why Day 4 had Deployments</h3>
-          <p>This is the gap a Deployment fills — you're about to create one yourself, typed instead of
-          clicked.</p></div>
-      </div>
-      <aside class="notes">Presenter: run this live, delete the Pod, and let the silence land — nothing comes
-      back. That absence is the whole teaching point before Deployments show up again.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · same two objects, typed instead of clicked</p>
-      <h2>Deployments &amp; Services, from the CLI</h2>
-      <div class="codeblock" style="font-size:.62em">kubectl create deployment badge --image=&lt;your-dockerhub-username&gt;/cloud-explorer:latest -n &lt;your-namespace&gt;
-kubectl expose deployment badge --port=80 --target-port=80 -n &lt;your-namespace&gt;</div>
-      <div class="callout" style="margin-top:.6em">Notice <b class="mono">kubectl expose</b> here makes a plain
-      internal address (<b class="mono">ClusterIP</b>), not a public one — deliberate. Today's badge Deployment
-      sits <b>behind a front door</b> instead of facing the internet directly. Next slide explains why.</div>
-      <table class="cmds" style="margin-top:.6em">
-        <tr><th>Verb</th><th>Does</th></tr>
-        <tr><td>kubectl run</td><td>one bare Pod, no self-healing</td></tr>
-        <tr><td>kubectl create deployment</td><td>a Deployment — Pods that get replaced if they die</td></tr>
-        <tr><td>kubectl expose</td><td>a Service — one stable address in front of the Deployment's Pods</td></tr>
-        <tr><td>get / describe / logs</td><td>look, look closer, read what it printed</td></tr>
-        <tr><td>kubectl delete</td><td>remove it</td></tr>
-      </table>
-      <aside class="notes">Presenter: this is deliberately the same two objects as Day 4 — the news here is the
-      verbs, not the concepts. Don't re-teach Deployment/Service from scratch.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · why the badge doesn't just get its own LoadBalancer</p>
-      <h2>One Service holds the domain. One Deployment scales freely.</h2>
-      <div class="arch">Browser/hey &#8594; https://&lt;name&gt;.alialjaffer.com
-                    &#9474;  <span class="cmt">(external-dns watches this Service's annotation,</span>
-                    &#9474;   <span class="cmt">writes the DNS record — Cloudflare set DNS-only</span>
-                    &#9660;   <span class="cmt">so hey hits the real origin directly)</span>
-   <span class="hi">Service: caddy-front-door</span>  (type: LoadBalancer)
-                    &#9660;
-   <span class="pin">Deployment: caddy-front-door</span>  (replicas: 1, PINNED — never autoscaled)
-     &#183; your instructor's own Caddy image &#183; gets the ONE cert for this hostname
-                    &#9474;  <span class="cmt">reverse_proxy, plain HTTP, internal only</span>
-                    &#9660;
-   <span class="hi">Service: badge</span>  (type: ClusterIP, no external IP)
-                    &#9660;
-   <span class="pin">Deployment: badge</span>  &#8592; THIS is what the HPA scales next session
-     &#183; your cloud-explorer image &#183; never touches TLS/DNS &#183; scales freely</div>
-      <div class="callout" style="margin-top:.5em;font-size:.7em">A naive "run Caddy in every replica" design
-      breaks under autoscaling: N replicas means N Let's Encrypt requests for the <em>same</em> hostname.
-      Splitting front door from backend fixes it.</div>
-      <aside class="notes">Presenter: this is the "why" slide — don't skip it even though it's dense. The
-      one-sentence version: only the front door touches TLS/DNS, and only it stays pinned at one replica; the
-      badge behind it is free to scale to zero problems.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · metadata other tools read</p>
-      <h2>Annotations vs labels — and the one that gives you a real domain</h2>
-      <div class="codeblock" style="font-size:.62em">metadata:
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: &lt;your-name&gt;.alialjaffer.com</div>
-      <div class="k2 c2" style="margin-top:.6em">
-        <div class="card"><h3>Label <span class="tag">Kubernetes reads it</span></h3>
-          <p>Metadata Kubernetes itself uses to match objects — how a Service's <b class="mono">selector</b>
-          finds the right Pods.</p></div>
-        <div class="card alt"><h3>Annotation <span class="tag">other tools read it</span></h3>
-          <p>Metadata for everything <em>else</em>. Kubernetes core doesn't act on it — a controller you
-          installed does.</p></div>
-      </div>
-      <div class="callout" style="margin-top:.6em"><b>external-dns</b> is already installed on the shared cluster.
-      It watches every Service for this one annotation key, and writes the matching DNS record automatically — no
-      console clicking, no manual DNS entry. 🔒 Records are DNS-only (no Cloudflare proxying), so the real IP is
-      always reachable directly.</div>
-      <aside class="notes">Presenter: the annotation/label distinction is a five-second definition — don't
-      linger. Spend the time on "this one annotation is the entire reason your subdomain exists."</aside>
-    </section>
-
-    <section>
-      <p class="kicker">🏆 Milestone 9 · give your badge its own name</p>
-      <h2>A real subdomain, a real certificate, all from your terminal</h2>
-      <div class="steps tight">
-        <div class="rule"><span class="n">1</span><p><b>Recon</b> yesterday's objects: <b class="mono">kubectl get
-          pods,deployments,services -n &lt;your-namespace&gt;</b>.</p></div>
-        <div class="rule"><span class="n">2</span><p><b>Feel the gap.</b> Run a throwaway Pod with
-          <b class="mono">kubectl run</b>, delete it, watch nothing replace it.</p></div>
-        <div class="rule"><span class="n">3</span><p><b>Clean slate.</b> Delete yesterday's <b class="mono">hello</b>
-          Deployment and Service — you won't need them anymore.</p></div>
-        <div class="rule"><span class="n">4</span><p><b>Rebuild badge as the backend.</b> Download and
-          <b class="mono">apply</b> it, then <b class="mono">expose</b> it.</p></div>
-        <div class="rule"><span class="n">5</span><p><b>Stand up the front door.</b> Fill in your subdomain,
-          <b class="mono">apply</b> the Deployment + Service.</p></div>
-        <div class="rule"><span class="n">6</span><p><b>Wait a minute</b>, then visit
-          <b class="mono">https://&lt;your-name&gt;.alialjaffer.com</b> — real padlock, real name, and
-          <b class="mono">served by pod: badge-xxxxx</b>.</p></div>
-      </div>
-      <div class="dlrow">
-        <a class="dl" href="../public/day5-badge-deployment.yaml" download>&#8681; badge-deployment.yaml</a>
-        <a class="dl" href="../public/day5-front-door.yaml" download>&#8681; front-door.yaml</a>
-      </div>
-      <div class="ackbox" style="padding:.6em 1em;margin-top:.5em"><input type="checkbox" aria-label="milestone 9 complete">
-        <div>Bare Pod ran and did <em>not</em> come back after deletion &#183; badge live at your own real
-        subdomain with a genuine TLS certificate &#183; badge page shows the actual serving Pod's name.</div></div>
-      <aside class="notes">Presenter: this is the payoff slide — let it breathe. Walk the room checking the real
-      padlock and the "served by pod:" line actually appear before moving on.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Session 1 · done</p>
-      <h2>You drove a real cluster from your terminal and named it yourself</h2>
-      <div class="k2 c3">
-        <div class="card"><h3>Typed, not clicked</h3><p><b class="mono">kubectl run</b>, <b class="mono">create
-          deployment</b>, <b class="mono">expose</b> — the same objects as Day 4, now from the CLI.</p></div>
-        <div class="card"><h3>Annotations, not labels</h3><p>One <b class="mono">external-dns</b> annotation gave
-          your badge a real subdomain and a real TLS certificate.</p></div>
-        <div class="card"><h3>After the break</h3><p>Your badge is pinned at one replica. Next you'll let the
-          cluster scale it by itself — then load-test the whole class at once.</p></div>
-      </div>
-      <div class="callout hot" style="margin-top:.9em">🎮 <b>Kahoot:</b> Day 5 · Session 1 — kubectl verbs, Pods
-      vs Deployments, and annotations vs labels.</div>
-      <aside class="notes">Presenter: end on "your badge now has a name nobody else's cluster address does" —
-      that's the emotional payoff before lunch.</aside>
-    </section>
-
-    <!-- ============================================================ SESSION 2 -->
-
-    <section>
-      <p class="kicker">Day 5 · Session 2 — autoscaling: survive the class-wide load test</p>
-      <h1>Your badge is live at its own name.<br>Now scale it — on purpose, in front of everyone.</h1>
-      <p class="sub" style="margin-top:1.05em;max-width:31em">Scale it by hand first, then hand the job to an
-      autoscaler, then tune how fast it reacts in both directions. At the end, the whole class hits every
-      subdomain at once to see whose autoscaler holds up.</p>
-      <aside class="notes">Presenter: promise the finale explicitly — "at the end of this session, we all run
-      hey against our own subdomains at the same moment, live."</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · you already did this by clicking</p>
-      <h2>Manual scaling: you're the thermostat</h2>
-      <div class="codeblock" style="font-size:.6em">kubectl scale deployment badge --replicas=5 -n &lt;your-namespace&gt;
-kubectl get pods -n &lt;your-namespace&gt; --watch</div>
-      <div class="k2 c2" style="margin-top:.6em">
-        <div class="card alt"><h3>This works</h3><p>But <em>you</em> have to notice the traffic and type the
-          command every time.</p></div>
-        <div class="card"><h3>That gap is what HPA fills</h3><p>A HorizontalPodAutoscaler watches usage and
-          adjusts <b class="mono">replicas</b> for you.</p></div>
-      </div>
-      <aside class="notes">Presenter: same idea as Day 4's Scale button, just typed. Don't over-teach — one
-      command, then move straight to "who does this instead of you."</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · let the cluster be the thermostat</p>
-      <h2>HPA: self-healing, aimed at load instead of crashes</h2>
-      <p class="sub" style="font-size:.68em;max-width:none">A <b>HorizontalPodAutoscaler (HPA)</b> watches a
-      Deployment's resource usage and adjusts <b class="mono">replicas</b> for you.</p>
-      <div class="codeblock" style="margin-top:.5em;font-size:.56em">kubectl autoscale deployment badge --cpu-percent=50 --min=1 --max=10 -n &lt;your-namespace&gt;
-kubectl get hpa -n &lt;your-namespace&gt; --watch</div>
-      <div class="k2 c2" style="margin-top:.6em">
-        <div class="card alt"><h3>One prerequisite</h3>
-          <p>HPA measures usage as a <b>percentage of what a Pod asked for</b>. Milestone 9's Deployment already
-          set this to 50m — confirm it: <b class="mono">kubectl set resources deployment badge --requests=cpu=50m</b>.</p></div>
-        <div class="card"><h3>Set artificially low, on purpose</h3>
-          <p>Makes the autoscaler easy to trigger live in class. A production service sizes this from real
-          measured usage, not a demo-friendly round number.</p></div>
-      </div>
-      <aside class="notes">Presenter: land the CPU-request prerequisite clearly — it's the thing students most
-      often forget, and the HPA silently reports "unknown" targets without it.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">HPA · scale-up is fast, scale-down is slow by default — feel the asymmetry</p>
-      <h2>Tune how fast the autoscaler reacts, in both directions</h2>
-      <iframe class="wframe" style="height:510px"
-              src="widgets/hpa_tuning.html?v=1"
-              title="HPA scaling behavior — default cooldown vs a tuned behavior block" scrolling="no"></iframe>
-      <aside class="notes">Presenter: press Play with "Default" selected first — watch replicas rocket up, then
-      sit stuck near the peak for a long, visible stretch after load drops. Switch to "Tuned" and press Play again
-      — same load curve, scale-down now tracks it down almost immediately. Call out that the times shown are the
-      real Kubernetes numbers (300s vs 15s), just played back fast enough to watch.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · overriding the default with YAML</p>
-      <h2>The <b class="mono">behavior</b> block: no cluster-admin access needed</h2>
-      <div class="codeblock" style="font-size:.58em">behavior:
-  scaleUp:
-    stabilizationWindowSeconds: 0
-    policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 15
-  scaleDown:
-    stabilizationWindowSeconds: 15
-    policies:
-      - type: Percent
-        value: 50
-        periodSeconds: 15</div>
-      <div class="callout" style="margin-top:.6em">By default, HPA scales <b>up</b> almost instantly but scales
-      <b>down</b> slowly — a built-in 5-minute cooldown (<b class="mono">stabilizationWindowSeconds: 300</b>) so
-      it doesn't yo-yo on every small blip. <b class="mono">kubectl autoscale</b> can't set this — it only takes
-      <b class="mono">--min</b>/<b class="mono">--max</b>/<b class="mono">--cpu-percent</b>. To add
-      <b class="mono">behavior</b>, you <b class="mono">apply</b> a full HPA YAML over the one you already
-      created — same name, same object, updated spec.</div>
-      <aside class="notes">Presenter: tie this straight back to the widget — this is the exact YAML behind the
-      "Tuned" toggle.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Foundations · point traffic at yourself, on purpose</p>
-      <h2><b class="mono">hey</b>: a load-testing tool, one command</h2>
-      <p class="sub" style="font-size:.68em;max-width:none">In a Terminal (MobaXterm, Terminal) run the following:</p>
-      <div class="codeblock" style="margin-top:.4em;font-size:.68em">hey -z 60s -c 50 https://&lt;your-name&gt;.alialjaffer.com/</div>
-      <div class="callout" style="margin-top:.6em"><b class="mono">-z 60s</b> = run for 60 seconds. <b class="mono">-c
-      50</b> = 50 requests in flight at once. Point it at the real subdomain you stood up last session — the
-      request has to survive DNS, the front door, and the load-balanced backend, same as any real visitor.</div>
-      <aside class="notes">Presenter: run a small `hey -z 10s -c 5` live here as a warm-up before the class-wide
-      test, so everyone confirms their own subdomain answers before the real showdown.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">🏆 Milestone 10 · the class-wide load-test showdown</p>
-      <h2>Scale, tune, then hit it with the rest of the class at once</h2>
-      <div class="steps tight">
-        <div class="rule"><span class="n">1</span><p><b>Reset baseline:</b> scale to 1 replica, set the CPU
-          request back to 50m.</p></div>
-        <div class="rule"><span class="n">2</span><p><b>Turn on autoscaling:</b> <b class="mono">kubectl autoscale
-          --cpu-percent=50 --min=1 --max=10</b>.</p></div>
-        <div class="rule"><span class="n">3</span><p><b>Tune it.</b> Fill in the scale-down blank, <b class="mono">apply</b>
-          your own <b class="mono">hpa.yaml</b> with the full <b class="mono">behavior</b> block.</p></div>
-        <div class="rule"><span class="n">4</span><p><b>Confirm <b class="mono">hey</b> works</b> against your
-          subdomain with a short warm-up run.</p></div>
-        <div class="rule"><span class="n">5</span><p><b>On your instructor's go:</b> <b class="mono">hey -z 90s -c
-          100</b> against your subdomain, with everyone else at the same moment.</p></div>
-        <div class="rule"><span class="n">6</span><p><b>Watch it live</b> in a second terminal: <b class="mono">kubectl
-          get hpa --watch</b> and <b class="mono">kubectl top pods</b>.</p></div>
-        <div class="rule"><span class="n">7</span><p><b>Refresh your badge</b> during and after — watch
-          <b class="mono">served by pod:</b> change as you land on different replicas.</p></div>
-      </div>
-      <div class="dlrow">
-        <a class="dl" href="../public/day5-hpa.yaml" download>&#8681; hpa.yaml</a>
-      </div>
-      <div class="ackbox" style="padding:.6em 1em;margin-top:.5em"><input type="checkbox" aria-label="milestone 10 complete">
-        <div>HPA scaled up under load and back down within ~15-30s of load ending &#183; watched
-        <b class="mono">kubectl get hpa --watch</b> / <b class="mono">top pods</b> move live &#183; saw the
-        served-by pod name change on refresh.</div></div>
-      <aside class="notes">Presenter: this is the finale — coordinate the "go" moment explicitly so every
-      student's `hey` fires at roughly the same second. Walk the room during the 90s window pointing at
-      `kubectl get hpa --watch` outputs on different screens.</aside>
-    </section>
-
-    <section>
-      <p class="kicker">Day 5 · done — and the week</p>
-      <h2>You drove a real Kubernetes cluster from the terminal, end to end</h2>
-      <div class="k2 c3">
-        <div class="card"><h3>This morning</h3><p>kubectl, typed Deployments &amp; Services, annotations — your
-          badge live at its own real subdomain with a real certificate.</p></div>
-        <div class="card"><h3>This afternoon</h3><p>Manual scaling, HPA, a tuned <b class="mono">behavior</b>
-          block, and a class-wide load test you watched scale live.</p></div>
-        <div class="card"><h3>The whole week</h3><p>Server &#8594; Docker &#8594; CI/CD &#8594; networking &#8594;
-          Kubernetes &#8594; autoscaling. You came in never having launched a server.</p></div>
-      </div>
-      <div class="callout hot" style="margin-top:.9em">🎮 <b>Kahoot:</b> Day 5 · Session 2 — manual scaling, HPA,
-      scaling behavior, and a grand mix of the whole week. Bragging rights on the line. 🏆</div>
-      <div class="partners sm">
-        <span class="plabel">In partnership with</span>
-        <img class="azm"  src="../Saudi-Azm.png"   alt="Saudi AZM">
-        <img class="sccc" src="../sccc-by-stc.png" alt="sccc by stc">
-      </div>
-      <aside class="notes">Presenter: close the whole week here, not just the day — "you drove a Kubernetes
-      cluster from the terminal, on infrastructure you built and named yourself." Mention where to go next:
-      Ingress/ConfigMaps/Secrets, Terraform, GitOps, Alibaba ACA certification, AZM's Platform Engineering
-      track.</aside>
-    </section>
-
-    <section>
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;
-        height:100%; text-align:center">
-        <p class="kicker">Day 5 · closing</p>
-        <h1>What's next?</h1>
-      </div>
-      <aside class="notes">Presenter: talk through this one live — no need to read the slide verbatim.</aside>
-    </section>
-
-  </div>
-</div>
-
-<script src="../shared/dist/reveal.js"></script>
-<script src="../shared/plugin/notes/notes.js"></script>
-<script src="js/state.js?v=2"></script>
-</body>
+    <script src="../shared/dist/reveal.js"></script>
+    <script src="../shared/plugin/notes/notes.js"></script>
+    <script src="js/state.js?v=2"></script>
+  </body>
 </html>
